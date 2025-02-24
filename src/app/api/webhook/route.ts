@@ -78,9 +78,14 @@ async function sendToMake(data: WebhookData) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  if (session.status !== 'complete') {
+    console.log('Skipping webhook, session not complete');
+    return;
+  }
+
   const items = session.metadata?.items ? JSON.parse(session.metadata.items) as WebhookItem[] : [];
   
-  console.log('Processing checkout.session.completed:', {
+  console.log('Processing completed checkout:', {
     session_id: session.id,
     customer: session.customer_details?.email,
     items: items.map(i => i.name)
@@ -92,7 +97,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       email: session.customer_details?.email,
       name: session.customer_details?.name,
       phone: session.customer_details?.phone,
-      address: session.customer_details?.address
+      address: session.customer_details?.address ? {
+        city: session.customer_details.address.city,
+        country: session.customer_details.address.country,
+        line1: session.customer_details.address.line1,
+        line2: session.customer_details.address.line2 || null,
+        postal_code: session.customer_details.address.postal_code,
+        state: session.customer_details.address.state
+      } : null
     },
     purchase: {
       items,
@@ -103,39 +115,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     payment: {
       status: 'completed',
       id: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null
-    }
-  });
-}
-
-async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-  console.log('Processing payment_intent.succeeded:', {
-    payment_id: paymentIntent.id,
-    amount: paymentIntent.amount
-  });
-
-  await sendToMake({
-    event: 'payment_intent.succeeded',
-    payment: {
-      status: 'succeeded',
-      id: paymentIntent.id,
-      amount: paymentIntent.amount
-    }
-  });
-}
-
-async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
-  console.error('Payment failed:', {
-    payment_id: paymentIntent.id,
-    error: paymentIntent.last_payment_error?.message,
-    code: paymentIntent.last_payment_error?.code
-  });
-
-  await sendToMake({
-    event: 'payment_intent.payment_failed',
-    payment: {
-      status: 'failed',
-      id: paymentIntent.id,
-      error: paymentIntent.last_payment_error?.message
     }
   });
 }
@@ -169,18 +148,10 @@ export async function POST(request: Request) {
       id: event.id
     });
 
-    switch (event.type) {
-      case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
-        break;
-      
-      case 'payment_intent.succeeded':
-        await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
-        break;
-      
-      case 'payment_intent.payment_failed':
-        await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
-        break;
+    if (event.type === 'checkout.session.completed') {
+      await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+    } else {
+      console.log('Ignoring webhook event:', event.type);
     }
 
     return NextResponse.json({ received: true });
