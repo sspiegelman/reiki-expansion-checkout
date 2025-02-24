@@ -3,7 +3,44 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
 
-async function sendToMake(data: any) {
+interface StripeError extends Error {
+  type?: string;
+  code?: string;
+  decline_code?: string;
+  payment_intent?: {
+    id: string;
+    status: string;
+  };
+}
+
+interface WebhookItem {
+  name: string;
+  price: number;
+}
+
+interface WebhookData {
+  event: string;
+  customer?: {
+    email?: string | null;
+    name?: string | null;
+    phone?: string | null;
+    address?: Stripe.Address | null;
+  };
+  purchase?: {
+    items: WebhookItem[];
+    total: number | null;
+    isFullExperience: boolean;
+    hasReattunement: boolean;
+  };
+  payment: {
+    status: string;
+    id: string | null;
+    amount?: number;
+    error?: string | null;
+  };
+}
+
+async function sendToMake(data: WebhookData) {
   if (!process.env.MAKE_WEBHOOK_URL) {
     console.warn('MAKE_WEBHOOK_URL not set, skipping Make.com integration');
     return;
@@ -21,14 +58,34 @@ async function sendToMake(data: any) {
     if (!response.ok) {
       throw new Error(`Make.com webhook failed: ${response.statusText}`);
     }
+
+    console.log('Successfully sent to Make.com:', {
+      event: data.event,
+      customer: data.customer?.email,
+      payment_id: data.payment?.id
+    });
   } catch (error) {
-    console.error('Error sending to Make.com:', error);
+    const err = error as Error;
+    console.error('Error sending to Make.com:', {
+      message: err.message,
+      data: {
+        event: data.event,
+        customer: data.customer?.email,
+        payment_id: data.payment?.id
+      }
+    });
   }
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  const items = session.metadata?.items ? JSON.parse(session.metadata.items) : [];
+  const items = session.metadata?.items ? JSON.parse(session.metadata.items) as WebhookItem[] : [];
   
+  console.log('Processing checkout.session.completed:', {
+    session_id: session.id,
+    customer: session.customer_details?.email,
+    items: items.map(i => i.name)
+  });
+
   await sendToMake({
     event: 'checkout.session.completed',
     customer: {
@@ -40,17 +97,22 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     purchase: {
       items,
       total: session.amount_total,
-      isFullExperience: items.some((i: any) => i.name === "Full 5-Part Experience"),
-      hasReattunement: items.some((i: any) => i.name.includes("Re-Attunement"))
+      isFullExperience: items.some(i => i.name === "Full 5-Part Experience"),
+      hasReattunement: items.some(i => i.name.includes("Re-Attunement"))
     },
     payment: {
       status: 'completed',
-      id: session.payment_intent
+      id: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null
     }
   });
 }
 
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  console.log('Processing payment_intent.succeeded:', {
+    payment_id: paymentIntent.id,
+    amount: paymentIntent.amount
+  });
+
   await sendToMake({
     event: 'payment_intent.succeeded',
     payment: {
@@ -62,6 +124,12 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
 }
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
+  console.error('Payment failed:', {
+    payment_id: paymentIntent.id,
+    error: paymentIntent.last_payment_error?.message,
+    code: paymentIntent.last_payment_error?.code
+  });
+
   await sendToMake({
     event: 'payment_intent.payment_failed',
     payment: {
@@ -77,18 +145,29 @@ export async function POST(request: Request) {
   const signature = headers().get('stripe-signature');
 
   if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error('Webhook configuration error:', {
+      has_signature: !!signature,
+      has_secret: !!process.env.STRIPE_WEBHOOK_SECRET
+    });
     return NextResponse.json(
       { error: 'Missing signature or webhook secret' },
       { status: 400 }
     );
   }
 
+  let event: Stripe.Event;
+
   try {
-    const event = stripe.webhooks.constructEvent(
+    event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET
     );
+
+    console.log('Received webhook event:', {
+      type: event.type,
+      id: event.id
+    });
 
     switch (event.type) {
       case 'checkout.session.completed':
@@ -106,7 +185,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Webhook error:', error);
+    const err = error as StripeError;
+    console.error('Webhook error:', {
+      message: err.message,
+      type: err.type,
+      code: err.code,
+      decline_code: err.decline_code,
+      payment_intent: err.payment_intent
+    });
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 400 }
