@@ -3,12 +3,6 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Course, ReattunementOption, PaymentOption } from '@/types';
 import { BUNDLE_PRICE } from '@/config/courses';
 
-interface PaymentPlanOption {
-  type: PaymentOption;
-  label: string;
-  amount: number;
-}
-
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY!);
 
 interface CheckoutButtonProps {
