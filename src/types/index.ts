@@ -1,3 +1,5 @@
+export type PaymentOption = 'full' | 'split-2' | 'split-3';
+
 export interface Course {
   id: string;
   title: string;

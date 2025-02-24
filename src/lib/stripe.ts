@@ -8,9 +8,25 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-01-27.acacia',
 });
 
+interface CheckoutOptions {
+  payment_intent_data?: {
+    setup_future_usage: 'off_session';
+  };
+  after_completion?: {
+    type: 'payment_plan';
+    payment_plan: {
+      amount_total: number;
+      currency: string;
+      interval: string;
+      interval_count: number;
+    };
+  };
+}
+
 export const createCheckoutSession = async (
   items: { price: number; name: string }[],
-  customerEmail?: string
+  customerEmail?: string,
+  options?: CheckoutOptions
 ) => {
   const lineItems = items.map((item) => ({
     price_data: {
@@ -24,6 +40,7 @@ export const createCheckoutSession = async (
   }));
 
   const session = await stripe.checkout.sessions.create({
+    ...options,
     line_items: lineItems,
     mode: 'payment',
     success_url: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/success?session_id={CHECKOUT_SESSION_ID}`,
