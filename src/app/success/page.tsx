@@ -2,6 +2,11 @@ import { getSessionDetails } from '@/lib/stripe';
 import { REATTUNEMENT } from '@/config/courses';
 import Link from 'next/link';
 
+interface MetadataItem {
+  name: string;
+  price: number;
+}
+
 export default async function SuccessPage({
   searchParams,
 }: {
@@ -25,7 +30,7 @@ export default async function SuccessPage({
           </h1>
           
           <p className="text-lg text-gray-600 mb-6">
-            We're excited to have you join the Reiki Expansion & Reactivation course.
+            We&apos;re excited to have you join the Reiki Expansion & Reactivation course.
           </p>
 
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
@@ -38,10 +43,10 @@ export default async function SuccessPage({
               <li className="flex items-start">
                 <span className="mr-2">2.</span>
                 {session?.metadata?.items && 
-                  JSON.parse(session.metadata.items).some((item: any) => 
+                  JSON.parse(session.metadata.items).some((item: MetadataItem) => 
                     item.name === REATTUNEMENT.title
                   ) && (
-                    <span>We'll contact you shortly to schedule your Re-Attunement session</span>
+                    <span>We&apos;ll contact you shortly to schedule your Re-Attunement session</span>
                   )
                 }
               </li>
@@ -85,7 +90,7 @@ export default async function SuccessPage({
           </div>
 
           <p className="mt-8 text-sm text-gray-500">
-            If you have any questions, please don't hesitate to reach out at{' '}
+            If you have any questions, please don&apos;t hesitate to reach out at{' '}
             <a 
               href="mailto:info@beaconsofchange.com" 
               className="text-primary hover:text-primary/80"
