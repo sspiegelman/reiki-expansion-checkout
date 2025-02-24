@@ -29,20 +29,10 @@ export const createCheckoutSession = async (
     success_url: `${process.env.VERCEL_URL || 'http://localhost:3000'}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.VERCEL_URL || 'http://localhost:3000'}`,
     customer_email: customerEmail,
-    custom_fields: [
-      {
-        key: 'phone',
-        label: { type: 'custom', custom: 'Phone Number' },
-        type: 'text',
-        optional: false,
-      },
-      {
-        key: 'address',
-        label: { type: 'custom', custom: 'Address' },
-        type: 'text',
-        optional: false,
-      },
-    ],
+    billing_address_collection: 'required',
+    phone_number_collection: {
+      enabled: true,
+    },
     metadata: {
       items: JSON.stringify(items),
     },

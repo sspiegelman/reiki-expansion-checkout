@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Course, ReattunementOption } from '@/types';
 
-const stripePromise = loadStripe(process.env.PUBLIC_STRIPE_KEY || '');
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY!);
 
 interface CheckoutButtonProps {
   selectedCourses: string[];

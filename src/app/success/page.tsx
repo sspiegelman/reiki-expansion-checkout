@@ -1,4 +1,5 @@
 import { getSessionDetails } from '@/lib/stripe';
+import { REATTUNEMENT } from '@/config/courses';
 import Link from 'next/link';
 
 export default async function SuccessPage({
@@ -32,12 +33,17 @@ export default async function SuccessPage({
             <ul className="text-left space-y-3 text-gray-600">
               <li className="flex items-start">
                 <span className="mr-2">1.</span>
-                Check your email for a welcome message with course access instructions
+                Check your email for a welcome message with course instructions
               </li>
               <li className="flex items-start">
                 <span className="mr-2">2.</span>
-                {session?.custom_fields?.find(f => f.key === 'phone') && 
-                  "We'll contact you shortly to schedule your Re-Attunement session"}
+                {session?.metadata?.items && 
+                  JSON.parse(session.metadata.items).some((item: any) => 
+                    item.name === REATTUNEMENT.title
+                  ) && (
+                    <span>We'll contact you shortly to schedule your Re-Attunement session</span>
+                  )
+                }
               </li>
               <li className="flex items-start">
                 <span className="mr-2">3.</span>
@@ -46,19 +52,46 @@ export default async function SuccessPage({
             </ul>
           </div>
 
-          {process.env.THANK_YOU_URL && (
-            <div className="mt-8">
-              <Link
-                href={process.env.THANK_YOU_URL}
-                className="text-primary hover:text-primary/80 underline"
-              >
-                Click here for additional information
-              </Link>
+          {session && (
+            <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary:</h2>
+              <div className="space-y-3">
+                {session.line_items?.data.map((item, index) => (
+                  <div key={index} className="flex justify-between text-gray-600">
+                    <span>{item.description}</span>
+                    <span>${(item.amount_total / 100).toFixed(2)}</span>
+                  </div>
+                ))}
+                {session.amount_total && (
+                  <div className="border-t pt-3 flex justify-between font-semibold text-gray-900">
+                    <span>Total</span>
+                    <span>${(session.amount_total / 100).toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
+          <div className="mt-8">
+            <Link
+              href={process.env.THANK_YOU_URL || 'https://beaconsofchange.com'}
+              className="inline-flex items-center text-primary hover:text-primary/80"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L4.414 9H17a1 1 0 110 2H4.414l5.293 5.293a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+              Back to Beacons of Change website
+            </Link>
+          </div>
+
           <p className="mt-8 text-sm text-gray-500">
-            If you have any questions, please don't hesitate to reach out.
+            If you have any questions, please don't hesitate to reach out at{' '}
+            <a 
+              href="mailto:info@beaconsofchange.com" 
+              className="text-primary hover:text-primary/80"
+            >
+              info@beaconsofchange.com
+            </a>
           </p>
         </div>
       </div>
