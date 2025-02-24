@@ -31,7 +31,7 @@ export function CheckoutButton({
       if (selectedCourses.length === courses.length) {
         // Bundle price for all classes
         selectedItems.push({
-          name: "Full 5-Part Experience",
+          name: "Reiki Expansion & Reactivation: A Five-Part Immersive Course",
           price: BUNDLE_PRICE
         });
       } else {

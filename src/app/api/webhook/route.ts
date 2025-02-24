@@ -97,7 +97,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     purchase: {
       items,
       total: session.amount_total,
-      isFullExperience: items.some(i => i.name === "Full 5-Part Experience"),
+      isFullExperience: items.some(i => i.name === "Reiki Expansion & Reactivation: A Five-Part Immersive Course"),
       hasReattunement: items.some(i => i.name.includes("Re-Attunement"))
     },
     payment: {

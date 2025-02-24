@@ -51,27 +51,32 @@ export function CourseList({ courses, reattunement, onSelectionChange }: CourseL
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between p-6 bg-white rounded-lg shadow border border-primary/20">
-        <div className="flex-1">
-          <h2 className="text-xl font-semibold text-gray-900">Register for the Full 5-Part Experience</h2>
-          <p className="text-sm text-gray-600 mt-1.5">Transform your Reiki practice with the complete immersive journey</p>
-        </div>
-        <div className="flex items-center space-x-6">
-          <div className="text-right">
-            <p className="text-sm text-gray-600 mb-1">Full Experience</p>
-            <p className="text-xl font-bold text-primary">$395</p>
-            <p className="text-xs text-primary/70 mt-0.5">Full Experience savings: $80</p>
+      <div 
+        onClick={handleSelectAll}
+        className="p-6 md:p-8 bg-white rounded-lg shadow border border-primary/20 cursor-pointer hover:shadow-lg transition-all"
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex-1">
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Register for the Full 5-Part Experience</h2>
+            <p className="text-base text-gray-600 mt-2">Transform your Reiki practice with the complete immersive journey</p>
           </div>
-          <button
-            onClick={handleSelectAll}
-            className={`px-6 py-3 rounded-lg transition-all transform hover:scale-105 ${
+          <div className="flex flex-row md:flex-col items-center md:items-end gap-4 md:gap-2">
+            <div className="text-right order-2 md:order-1">
+              <p className="text-2xl font-bold text-primary">$395</p>
+              <p className="text-sm text-primary/70">Full Experience savings: $80</p>
+            </div>
+            <div className={`order-1 md:order-2 h-6 w-6 rounded-md border-2 flex items-center justify-center transition-colors ${
               selectedCourses.length === courses.length
-                ? 'bg-white text-primary border-2 border-primary hover:bg-primary/5'
-                : 'bg-primary text-white shadow-lg hover:bg-primary/90'
-            }`}
-          >
-            {selectedCourses.length === courses.length ? 'Deselect All' : 'Select all classes'}
-          </button>
+                ? 'bg-primary border-primary'
+                : 'border-gray-300'
+            }`}>
+              {selectedCourses.length === courses.length && (
+                <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -79,7 +84,8 @@ export function CourseList({ courses, reattunement, onSelectionChange }: CourseL
         {courses.map((course) => (
           <div
             key={course.id}
-            className="bg-white rounded-lg shadow hover:shadow-md transition-shadow h-full flex overflow-hidden min-h-[200px]"
+            onClick={() => handleCourseToggle(course.id)}
+            className="bg-white rounded-lg shadow hover:shadow-md transition-all cursor-pointer h-full flex overflow-hidden min-h-[200px] relative group"
           >
             <div className="w-16 bg-primary/10 flex flex-col items-center justify-start py-4 border-r border-primary/20">
               <span className="text-primary/70 text-xs font-medium mb-1">Class</span>
@@ -94,12 +100,17 @@ export function CourseList({ courses, reattunement, onSelectionChange }: CourseL
                 </h3>
                 <div className="flex items-center space-x-4">
                   <span className="text-gray-900 font-medium">${course.price / 100}</span>
-                  <input
-                    type="checkbox"
-                    checked={selectedCourses.includes(course.id)}
-                    onChange={() => handleCourseToggle(course.id)}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
+                  <div className={`h-6 w-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                    selectedCourses.includes(course.id)
+                      ? 'bg-primary border-primary'
+                      : 'border-gray-300 group-hover:border-primary/50'
+                  }`}>
+                    {selectedCourses.includes(course.id) && (
+                      <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
                 </div>
               </div>
               <p className="text-sm text-gray-600">{course.description}</p>
@@ -111,11 +122,14 @@ export function CourseList({ courses, reattunement, onSelectionChange }: CourseL
         ))}
       </div>
 
-      <div className={`bg-white rounded-lg shadow transition-shadow h-full flex overflow-hidden ${
-        selectedCourses.length > 0 
-          ? 'hover:shadow-md' 
-          : 'opacity-50 cursor-not-allowed'
-      }`}>
+      <div 
+        onClick={selectedCourses.length > 0 ? handleReattunementToggle : undefined}
+        className={`bg-white rounded-lg shadow transition-all h-full flex overflow-hidden ${
+          selectedCourses.length > 0 
+            ? 'hover:shadow-md cursor-pointer' 
+            : 'opacity-50 cursor-not-allowed'
+        }`}
+      >
         <div className="w-16 bg-primary/5 flex flex-col items-center justify-start py-4 border-r border-primary/10">
           <span className="text-primary/70 text-xs font-medium mb-1">Add-on</span>
           <span className="text-primary/70 font-bold text-2xl">+</span>
@@ -127,17 +141,19 @@ export function CourseList({ courses, reattunement, onSelectionChange }: CourseL
             </h3>
             <div className="flex items-center space-x-4">
               <span className="text-gray-900 font-medium">${reattunement.price / 100}</span>
-              <input
-                type="checkbox"
-                checked={includeReattunement}
-                onChange={handleReattunementToggle}
-                disabled={selectedCourses.length === 0}
-                className={`h-4 w-4 rounded border-gray-300 ${
-                  selectedCourses.length > 0 
-                    ? 'text-primary focus:ring-primary' 
-                    : 'text-gray-300'
-                }`}
-              />
+              <div className={`h-6 w-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                includeReattunement
+                  ? 'bg-primary border-primary'
+                  : selectedCourses.length > 0
+                    ? 'border-gray-300 group-hover:border-primary/50'
+                    : 'border-gray-300'
+              }`}>
+                {includeReattunement && (
+                  <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
             </div>
           </div>
           <p className="text-sm text-gray-600">Optional add-on - Scheduled separately</p>
