@@ -18,10 +18,15 @@ export async function POST(request: Request) {
     return NextResponse.json({
       sessionId: session.id
     });
-  } catch (error) {
-    console.error('Error creating checkout session:', error);
+  } catch (error: any) {
+    console.error('Error creating checkout session:', {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      raw: error
+    });
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }

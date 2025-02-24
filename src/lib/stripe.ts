@@ -26,8 +26,8 @@ export const createCheckoutSession = async (
   const session = await stripe.checkout.sessions.create({
     line_items: lineItems,
     mode: 'payment',
-    success_url: `${process.env.VERCEL_URL || 'http://localhost:3000'}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.VERCEL_URL || 'http://localhost:3000'}`,
+    success_url: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}`,
     customer_email: customerEmail,
     billing_address_collection: 'required',
     phone_number_collection: {
