@@ -1,70 +1,84 @@
-import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import type { Stripe } from 'stripe';
+import Stripe from 'stripe';
 
-async function sendToMake(session: Stripe.Checkout.Session) {
+async function sendToMake(data: any) {
   if (!process.env.MAKE_WEBHOOK_URL) {
-    throw new Error('MAKE_WEBHOOK_URL is not set');
+    console.warn('MAKE_WEBHOOK_URL not set, skipping Make.com integration');
+    return;
   }
 
-  const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-  const customFields = session.custom_fields?.reduce<Record<string, string>>((acc, field) => ({
-    ...acc,
-    [field.key]: field.text?.value || ''
-  }), {}) || {};
+  try {
+    const response = await fetch(process.env.MAKE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
 
-  const payload = {
+    if (!response.ok) {
+      throw new Error(`Make.com webhook failed: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('Error sending to Make.com:', error);
+  }
+}
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const items = session.metadata?.items ? JSON.parse(session.metadata.items) : [];
+  
+  await sendToMake({
+    event: 'checkout.session.completed',
     customer: {
       email: session.customer_details?.email,
       name: session.customer_details?.name,
-      phone: customFields?.phone,
-      address: customFields?.address,
+      phone: session.customer_details?.phone,
+      address: session.customer_details?.address
     },
-    order: {
-      id: session.id,
-      date: new Date(session.created * 1000).toISOString(),
-      total_amount: session.amount_total,
-      currency: session.currency,
-      payment_status: session.payment_status,
+    purchase: {
+      items,
+      total: session.amount_total,
+      isFullExperience: items.some((i: any) => i.name === "Full 5-Part Experience"),
+      hasReattunement: items.some((i: any) => i.name.includes("Re-Attunement"))
     },
-    products: lineItems.data.map(item => ({
-      name: item.description,
-      price: item.price?.unit_amount,
-      quantity: item.quantity,
-    })),
-    metadata: session.metadata,
-  };
-
-  const response = await fetch(process.env.MAKE_WEBHOOK_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
+    payment: {
+      status: 'completed',
+      id: session.payment_intent
+    }
   });
+}
 
-  if (!response.ok) {
-    throw new Error('Failed to send data to Make.com');
-  }
+async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  await sendToMake({
+    event: 'payment_intent.succeeded',
+    payment: {
+      status: 'succeeded',
+      id: paymentIntent.id,
+      amount: paymentIntent.amount
+    }
+  });
+}
 
-  return response.json();
+async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
+  await sendToMake({
+    event: 'payment_intent.payment_failed',
+    payment: {
+      status: 'failed',
+      id: paymentIntent.id,
+      error: paymentIntent.last_payment_error?.message
+    }
+  });
 }
 
 export async function POST(request: Request) {
   const body = await request.text();
   const signature = headers().get('stripe-signature');
 
-  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+  if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json(
-      { error: 'Webhook secret not configured' },
-      { status: 500 }
-    );
-  }
-
-  if (!signature) {
-    return NextResponse.json(
-      { error: 'No signature found' },
+      { error: 'Missing signature or webhook secret' },
       { status: 400 }
     );
   }
@@ -76,9 +90,18 @@ export async function POST(request: Request) {
       process.env.STRIPE_WEBHOOK_SECRET
     );
 
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
-      await sendToMake(session);
+    switch (event.type) {
+      case 'checkout.session.completed':
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+      
+      case 'payment_intent.succeeded':
+        await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
+        break;
+      
+      case 'payment_intent.payment_failed':
+        await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
+        break;
     }
 
     return NextResponse.json({ received: true });
