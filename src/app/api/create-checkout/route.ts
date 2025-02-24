@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createCheckoutSession } from '@/lib/stripe';
 
+interface StripeError extends Error {
+  type?: string;
+  code?: string;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -18,15 +23,15 @@ export async function POST(request: Request) {
     return NextResponse.json({
       sessionId: session.id
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const stripeError = error as StripeError;
     console.error('Error creating checkout session:', {
-      message: error.message,
-      type: error.type,
-      code: error.code,
-      raw: error
+      message: stripeError.message,
+      type: stripeError.type,
+      code: stripeError.code
     });
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: stripeError.message || 'Internal server error' },
       { status: 500 }
     );
   }
