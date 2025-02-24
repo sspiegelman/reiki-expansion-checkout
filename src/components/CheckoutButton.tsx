@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Course, ReattunementOption } from '@/types';
+import { BUNDLE_PRICE } from '@/config/courses';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY!);
 
@@ -25,13 +26,24 @@ export function CheckoutButton({
     try {
       setIsLoading(true);
 
-      const selectedItems = selectedCourses.map(courseId => {
-        const course = courses.find(c => c.id === courseId)!;
-        return {
-          name: course.title,
-          price: course.price
-        };
-      });
+      let selectedItems = [];
+      
+      if (selectedCourses.length === courses.length) {
+        // Bundle price for all classes
+        selectedItems.push({
+          name: "Full 5-Part Experience",
+          price: BUNDLE_PRICE
+        });
+      } else {
+        // Individual class prices
+        selectedItems = selectedCourses.map(courseId => {
+          const course = courses.find(c => c.id === courseId)!;
+          return {
+            name: course.title,
+            price: course.price
+          };
+        });
+      }
 
       if (includeReattunement) {
         selectedItems.push({
