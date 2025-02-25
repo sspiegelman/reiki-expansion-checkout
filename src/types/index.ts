@@ -1,5 +1,12 @@
 export type PaymentOption = 'full' | 'split-2' | 'split-3';
 
+export interface PaymentDetails {
+  type: PaymentOption;
+  label: string;
+  amount: number;
+  splitAmount?: number;
+}
+
 export interface Course {
   id: string;
   title: string;

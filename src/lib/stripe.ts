@@ -17,46 +17,31 @@ interface CheckoutOptions {
     trial_period_days: number;
     payment_behavior: 'default_incomplete';
   };
+  metadata?: Record<string, string>;
 }
 
 export const createCheckoutSession = async (
-  items: { price: number; name: string }[],
+  items: { price: number; name: string; description?: string }[],
   customerEmail?: string,
   options?: CheckoutOptions
 ) => {
-  const lineItems = items.map((item) => {
-    const priceData = options?.mode === 'subscription'
-      ? {
-          currency: 'usd',
-          product_data: {
-            name: item.name,
-          },
-          unit_amount: Math.floor(item.price / (options.subscription_data?.trial_period_days === 30 ? 2 : 3)),
-          recurring: {
-            interval: 'month' as Stripe.Price.Recurring.Interval,
-            interval_count: 1
-          }
-        }
-      : {
-          currency: 'usd',
-          product_data: {
-            name: item.name,
-          },
-          unit_amount: item.price,
-        };
-
-    return {
-      price_data: priceData,
-      quantity: 1,
-    };
-  });
+  // Create line items - simple pass-through
+  const lineItems = items.map((item) => ({
+    price_data: {
+      currency: 'usd',
+      product_data: {
+        name: item.name,
+        description: item.description
+      },
+      unit_amount: item.price
+    },
+    quantity: 1
+  }));
 
   const session = await stripe.checkout.sessions.create({
     line_items: lineItems,
     mode: options?.mode || 'payment',
-    payment_method_types: options?.payment_method_types || ['card'] as Stripe.Checkout.SessionCreateParams.PaymentMethodType[],
-    payment_method_collection: options?.mode === 'subscription' ? 'always' : undefined,
-    subscription_data: options?.subscription_data,
+    payment_method_types: options?.payment_method_types || ['card'],
     success_url: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}`,
     customer_email: customerEmail,
@@ -64,9 +49,9 @@ export const createCheckoutSession = async (
     phone_number_collection: {
       enabled: true,
     },
-    metadata: {
-      items: JSON.stringify(items),
-    },
+    metadata: options?.metadata || {
+      items: JSON.stringify(items)
+    }
   });
 
   return session;

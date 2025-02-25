@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import { Course, ReattunementOption, PaymentOption } from '@/types';
+import { Course, ReattunementOption, PaymentOption, PaymentDetails } from '@/types';
 import { BUNDLE_PRICE } from '@/config/courses';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY!);
+import { CheckoutModal } from './CheckoutModal';
 
 interface CheckoutButtonProps {
   selectedCourses: string[];
@@ -11,6 +9,8 @@ interface CheckoutButtonProps {
   courses: Course[];
   reattunement: ReattunementOption;
   disabled: boolean;
+  paymentOption?: 'full' | 'split-2' | 'split-3';
+  onPaymentOptionChange: (option: 'full' | 'split-2' | 'split-3') => void;
 }
 
 export function CheckoutButton({
@@ -18,184 +18,180 @@ export function CheckoutButton({
   includeReattunement,
   courses,
   reattunement,
-  disabled
+  disabled,
+  paymentOption = 'full',
+  onPaymentOptionChange
 }: CheckoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentOption, setPaymentOption] = useState<PaymentOption>('full');
+  const getPaymentOptions = (): PaymentDetails[] => {
+    // Calculate total based on selected items
+    let total = selectedCourses.length === courses.length
+      ? BUNDLE_PRICE // $395
+      : selectedCourses.length * 9500; // $95 per class
 
-  const getPaymentOptions = () => {
-    const total = selectedCourses.length === courses.length
-      ? (includeReattunement ? BUNDLE_PRICE + reattunement.price : BUNDLE_PRICE)
-      : 0;
+    // Add re-attunement if selected
+    if (includeReattunement) {
+      total += reattunement.price; // Add $97
+    }
 
     if (total === 0) return [];
 
-    return [
-      {
-        type: 'full',
-        label: `Pay in full: $${(total / 100).toFixed(2)}`,
-        amount: total
-      },
-      {
-        type: 'split-2',
-        label: `2 payments of $${(total / 200).toFixed(2)} (Today + 30 days)`,
-        amount: total
-      },
-      {
-        type: 'split-3',
-        label: `3 payments of $${(total / 300).toFixed(2)} (Today + 30/60 days)`,
-        amount: total
-      }
-    ];
+    const totalFormatted = (total / 100).toFixed(2);
+
+    // Format payment options
+    const options = [];
+
+    // Full payment
+    options.push({
+      type: 'full' as const,
+      label: `Pay in full: $${totalFormatted}`,
+      amount: total
+    });
+
+    // 2 payments
+    const twoPaymentAmount = Math.round(total / 2);
+    options.push({
+      type: 'split-2' as const,
+      label: `2 payments × $${(twoPaymentAmount / 100).toFixed(2)}`,
+      amount: total,
+      splitAmount: twoPaymentAmount
+    });
+
+    // 3 payments
+    const threePaymentAmount = Math.round(total / 3);
+    const remainingAmount = total - (threePaymentAmount * 2);
+    options.push({
+      type: 'split-3' as const,
+      label: `3 payments × $${(threePaymentAmount / 100).toFixed(2)}`,
+      amount: total,
+      splitAmount: threePaymentAmount
+    });
+
+    return options;
   };
 
-  const handleCheckout = async () => {
-    try {
-      setIsLoading(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-      let selectedItems = [];
-      const checkoutOptions = {};
-      
-      if (selectedCourses.length === courses.length) {
-        // Bundle price for all classes
-        selectedItems.push({
-          name: "Reiki Expansion & Reactivation: A Five-Part Immersive Course",
-          price: BUNDLE_PRICE
-        });
+  const handleCheckout = () => {
+    setIsModalOpen(true);
+  };
 
-        // Calculate total including re-attunement if selected
-        const total = includeReattunement ? BUNDLE_PRICE + reattunement.price : BUNDLE_PRICE;
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
 
-        if (paymentOption !== 'full') {
-          const payments = paymentOption === 'split-2' ? 2 : 3;
-          const splitAmount = Math.floor(total / payments);
-          
-          selectedItems = [{
-            name: [
-              `Reiki Expansion & Reactivation${includeReattunement ? ' with Re-Attunement' : ''}`,
-              'Payment Schedule:',
-              `• First payment: $${(splitAmount / 100).toFixed(2)} today`,
-              ...(payments === 2 
-                ? [`• Final payment: $${(splitAmount / 100).toFixed(2)} in 30 days`]
-                : [
-                    `• Second payment: $${(splitAmount / 100).toFixed(2)} in 30 days`,
-                    `• Final payment: $${(splitAmount / 100).toFixed(2)} in 60 days`
-                  ]
-              )
-            ].join('\n'),
-            price: splitAmount
-          }];
-        } else {
-          // Full payment - add bundle and re-attunement separately
-          selectedItems = [{
-            name: "Reiki Expansion & Reactivation: A Five-Part Immersive Course",
-            price: BUNDLE_PRICE
-          }];
-          
-          if (includeReattunement) {
-            selectedItems.push({
-              name: reattunement.title,
-              price: reattunement.price
-            });
-          }
-        }
-      } else {
-        // Individual class prices
-        selectedItems = selectedCourses.map(courseId => {
-          const course = courses.find(c => c.id === courseId)!;
-          return {
-            name: course.title,
-            price: course.price
-          };
-        });
-
-        if (includeReattunement) {
-          selectedItems.push({
-            name: reattunement.title,
-            price: reattunement.price
-          });
-        }
-      }
-
-      const response = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          items: selectedItems,
-          options: checkoutOptions
-        }),
+  const getSelectedItems = () => {
+    const items = [];
+    
+    // Calculate course prices
+    if (selectedCourses.length === courses.length) {
+      // Bundle price for all classes
+      items.push({
+        name: "Reiki Expansion & Reactivation: A Five-Part Immersive Course",
+        price: BUNDLE_PRICE
       });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const { sessionId } = await response.json();
-      const stripe = await stripePromise;
-      
-      if (!stripe) {
-        throw new Error('Stripe failed to load');
-      }
-
-      const { error } = await stripe.redirectToCheckout({
-        sessionId,
+    } else {
+      // Individual class prices
+      selectedCourses.forEach(courseId => {
+        const course = courses.find(c => c.id === courseId)!;
+        items.push({
+          name: course.title,
+          price: course.price
+        });
       });
-
-      if (error) {
-        throw error;
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Failed to checkout. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
+
+    // Add re-attunement if selected
+    if (includeReattunement) {
+      items.push({
+        name: reattunement.title,
+        price: reattunement.price
+      });
+    }
+
+    return items;
   };
 
-  // Debug logs
-  console.log('Render state:', {
-    selectedCourses,
-    totalCourses: courses.length,
-    isBundle: selectedCourses.length === courses.length,
-    paymentOptions: getPaymentOptions()
-  });
+  const getPaymentScheduleDetails = () => {
+    const paymentDetails = getPaymentOptions().find(option => option.type === paymentOption);
+    if (!paymentDetails?.splitAmount) return null;
+
+    const payments = paymentOption === 'split-2' ? 2 : 3;
+    return {
+      splitAmount: paymentDetails.splitAmount,
+      totalAmount: paymentDetails.amount,
+      payments
+    };
+  };
 
   return (
-    <div className="space-y-4">
-      {selectedCourses.length === courses.length && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Payment Options:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {getPaymentOptions().map((option) => (
-              <button
-                key={option.type}
-                onClick={() => setPaymentOption(option.type as PaymentOption)}
-                className={`p-3 text-sm rounded-lg border transition-colors ${
-                  paymentOption === option.type
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-gray-200 hover:border-primary/30'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
+    <>
+      <div className="space-y-4">
+        {selectedCourses.length === courses.length && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-700">Payment Options:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {getPaymentOptions().map((option) => (
+                <button
+                  key={option.type}
+                  onClick={() => onPaymentOptionChange(option.type as PaymentOption)}
+                  className={`py-2.5 px-4 text-sm rounded-lg border transition-colors text-center font-medium ${
+                    paymentOption === option.type
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-gray-200 hover:border-primary/30 text-gray-700'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <button
-        onClick={handleCheckout}
-        disabled={disabled || isLoading}
-        className={`w-full py-3 px-4 text-white font-medium rounded-lg transition-colors ${
-          disabled || isLoading
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-primary hover:bg-primary/90'
-        }`}
-      >
-        {isLoading ? 'Processing...' : 'Proceed to Checkout'}
-      </button>
-    </div>
+        <div className="flex items-center gap-6">
+          <div className="flex-1">
+            <button
+              onClick={handleCheckout}
+              disabled={disabled || isLoading}
+              className={`w-full py-3 px-4 text-white font-medium rounded-lg transition-colors ${
+                disabled || isLoading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-primary hover:bg-primary/90'
+              }`}
+            >
+              {isLoading ? 'Processing...' : 'Proceed to Checkout'}
+            </button>
+          </div>
+          
+          {/* Order Summary */}
+          {!disabled && (
+            <div className="text-right">
+              <div className="text-sm text-gray-600">Total Order:</div>
+              <div className="font-semibold text-lg">
+                ${(getSelectedItems().reduce((sum, item) => sum + item.price, 0) / 100).toFixed(2)}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Checkout Modal for all payments */}
+      <CheckoutModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        items={getSelectedItems()}
+        paymentSchedule={{
+          splitAmount: selectedCourses.length === courses.length && paymentOption !== 'full'
+            ? paymentOption === 'split-2'
+              ? Math.round(BUNDLE_PRICE / 2)
+              : Math.round(BUNDLE_PRICE / 3)
+            : getSelectedItems().reduce((sum, item) => sum + item.price, 0),
+          totalAmount: getSelectedItems().reduce((sum, item) => sum + item.price, 0),
+          payments: selectedCourses.length === courses.length && paymentOption !== 'full'
+            ? paymentOption === 'split-2' ? 2 : 3
+            : 1
+        }}
+      />
+    </>
   );
 }

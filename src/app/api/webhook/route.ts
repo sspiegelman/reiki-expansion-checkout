@@ -37,6 +37,7 @@ interface WebhookData {
     id: string | null;
     amount?: number;
     error?: string | null;
+    metadata?: Record<string, string>;
   };
 }
 
@@ -72,6 +73,70 @@ async function sendToMake(data: WebhookData) {
         event: data.event,
         customer: data.customer?.email,
         payment_id: data.payment?.id
+      }
+    });
+  }
+}
+
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  console.log('Processing successful payment:', {
+    id: paymentIntent.id,
+    amount: paymentIntent.amount,
+    metadata: paymentIntent.metadata
+  });
+
+  // Handle split payments
+  if (paymentIntent.metadata.type === 'split_payment') {
+    const paymentNumber = parseInt(paymentIntent.metadata.payment_number);
+    const totalPayments = parseInt(paymentIntent.metadata.total_payments);
+    const totalAmount = parseInt(paymentIntent.metadata.total_amount);
+
+    // If this wasn't the last payment, schedule the next one
+    if (paymentNumber < totalPayments) {
+      const nextPaymentDate = new Date();
+      nextPaymentDate.setDate(nextPaymentDate.getDate() + 30); // 30 days from now
+
+      // Store next payment details in metadata
+      await sendToMake({
+        event: 'payment_intent.succeeded',
+        payment: {
+          status: 'completed',
+          id: paymentIntent.id,
+          amount: paymentIntent.amount,
+          metadata: {
+            type: 'split_payment',
+            payment_number: paymentNumber.toString(),
+            total_payments: totalPayments.toString(),
+            next_payment_date: nextPaymentDate.toISOString(),
+            next_payment_amount: paymentIntent.amount.toString()
+          }
+        }
+      });
+    } else {
+      // Final payment completed
+      await sendToMake({
+        event: 'payment_intent.succeeded',
+        payment: {
+          status: 'completed',
+          id: paymentIntent.id,
+          amount: paymentIntent.amount,
+          metadata: {
+            type: 'split_payment',
+            payment_number: paymentNumber.toString(),
+            total_payments: totalPayments.toString(),
+            final_payment: 'true'
+          }
+        }
+      });
+    }
+  } else {
+    // Regular full payment
+    await sendToMake({
+      event: 'payment_intent.succeeded',
+      payment: {
+        status: 'completed',
+        id: paymentIntent.id,
+        amount: paymentIntent.amount
       }
     });
   }
@@ -148,10 +213,15 @@ export async function POST(request: Request) {
       id: event.id
     });
 
-    if (event.type === 'checkout.session.completed') {
-      await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
-    } else {
-      console.log('Ignoring webhook event:', event.type);
+    switch (event.type) {
+      case 'checkout.session.completed':
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+      case 'payment_intent.succeeded':
+        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+        break;
+      default:
+        console.log('Ignoring webhook event:', event.type);
     }
 
     return NextResponse.json({ received: true });

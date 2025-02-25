@@ -1,193 +1,173 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Course, ReattunementOption } from '@/types';
 import { BUNDLE_PRICE } from '@/config/courses';
 
 interface CourseListProps {
   courses: Course[];
   reattunement: ReattunementOption;
-  onSelectionChange: (selectedCourses: string[], includeReattunement: boolean) => void;
+  selectedCourses: string[];
+  includeReattunement: boolean;
+  onSelectCourse: (courseId: string) => void;
+  onToggleReattunement: () => void;
+  onPaymentOptionChange: (option: 'full' | 'split-2' | 'split-3') => void;
+  onBundleSelection: (selected: boolean) => void;
 }
 
-export function CourseList({ courses, reattunement, onSelectionChange }: CourseListProps) {
-  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
-  const [includeReattunement, setIncludeReattunement] = useState(false);
-
-  useEffect(() => {
-    // Reset reattunement when no courses are selected
-    if (selectedCourses.length === 0 && includeReattunement) {
-      setIncludeReattunement(false);
-      onSelectionChange([], false);
-    }
-  }, [selectedCourses, includeReattunement, onSelectionChange]);
-
-  const handleCourseToggle = (courseId: string) => {
-    const newSelection = selectedCourses.includes(courseId)
-      ? selectedCourses.filter(id => id !== courseId)
-      : [...selectedCourses, courseId];
-    setSelectedCourses(newSelection);
-    onSelectionChange(newSelection, includeReattunement);
-  };
-
-  const handleSelectAll = () => {
-    const allCourseIds = courses.map(course => course.id);
-    const newSelection = selectedCourses.length === courses.length ? [] : allCourseIds;
-    setSelectedCourses(newSelection);
-    onSelectionChange(newSelection, includeReattunement);
-  };
-
-  const handleReattunementToggle = () => {
-    if (selectedCourses.length === 0) return;
-    setIncludeReattunement(!includeReattunement);
-    onSelectionChange(selectedCourses, !includeReattunement);
-  };
-
-  const calculateTotal = () => {
-    const coursesTotal = selectedCourses.length === courses.length
-      ? BUNDLE_PRICE
-      : selectedCourses.length * courses[0].price;
-    const reattunementTotal = includeReattunement ? reattunement.price : 0;
-    return coursesTotal + reattunementTotal;
-  };
+export function CourseList({
+  courses,
+  reattunement,
+  selectedCourses,
+  includeReattunement,
+  onSelectCourse,
+  onToggleReattunement,
+  onPaymentOptionChange,
+  onBundleSelection
+}: CourseListProps) {
+  const [showIndividualClasses, setShowIndividualClasses] = useState(false);
+  const [selectedPaymentOption, setSelectedPaymentOption] = useState<'full' | 'split-2' | 'split-3'>('full');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Full Experience Option */}
       <div 
-        onClick={handleSelectAll}
-        className="p-6 md:p-8 bg-white rounded-lg shadow border border-primary/20 cursor-pointer hover:shadow-lg transition-all"
+        className={`bg-white rounded-xl p-6 border-2 transition-colors ${
+          selectedCourses.length === courses.length 
+            ? 'border-primary bg-primary/5 shadow-lg' 
+            : 'border-gray-200 hover:border-primary/30'
+        }`}
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex-1">
-            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Register for the Full 5-Part Experience</h2>
-            <p className="text-base text-gray-600 mt-2">Transform your Reiki practice with the complete immersive journey</p>
-          </div>
-          <div className="flex flex-row md:flex-col items-center md:items-end gap-4 md:gap-2">
-            <div className="text-right order-2 md:order-1">
-              <p className="text-2xl font-bold text-primary">$395</p>
-              <p className="text-sm text-primary/70">Full Experience savings: $80</p>
+        <h2 className="text-2xl font-semibold text-gray-900">
+          Register for the Full 5-Part Experience
+        </h2>
+        <div className="mt-4 space-y-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-lg text-gray-700">
+                Complete Reiki Expansion & Reactivation Course
+              </p>
+              <p className="text-primary font-medium mt-1">
+                Full Course Price: ${(BUNDLE_PRICE / 100).toFixed(2)} (Save $80)
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                Get access to all 5 classes at our best value
+              </p>
             </div>
-            <div className={`order-1 md:order-2 h-6 w-6 rounded-md border-2 flex items-center justify-center transition-colors ${
-              selectedCourses.length === courses.length
-                ? 'bg-primary border-primary'
-                : 'border-gray-300'
-            }`}>
-              {selectedCourses.length === courses.length && (
-                <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              )}
-            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onBundleSelection(selectedCourses.length !== courses.length);
+                setShowIndividualClasses(false);
+              }}
+              className={`w-full md:w-auto px-8 py-3 rounded-lg transition-colors text-white font-medium ${
+                selectedCourses.length === courses.length
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-primary hover:bg-primary/90'
+              }`}
+            >
+              {selectedCourses.length === courses.length ? 'Full Course Selected' : 'Select Full Course'}
+            </button>
           </div>
+
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {courses.map((course) => (
-          <div
-            key={course.id}
-            onClick={() => handleCourseToggle(course.id)}
-            className="bg-white rounded-lg shadow hover:shadow-md transition-all cursor-pointer h-full flex overflow-hidden min-h-[200px] relative group"
+      {/* Individual Classes */}
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <button 
+          onClick={() => setShowIndividualClasses(!showIndividualClasses)}
+          className="w-full flex justify-between items-center"
+        >
+          <div>
+            <h2 className="text-xl font-medium text-gray-900">
+              Individual Classes
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Select one or more classes
+            </p>
+          </div>
+          <svg 
+            className={`h-5 w-5 transform transition-transform ${showIndividualClasses ? 'rotate-180' : ''}`}
+            fill="none" 
+            viewBox="0 0 24 24" 
+            strokeWidth="1.5" 
+            stroke="currentColor"
           >
-            <div className="w-16 bg-primary/10 flex flex-col items-center justify-start py-4 border-r border-primary/20">
-              <span className="text-primary/70 text-xs font-medium mb-1">Class</span>
-              <span className="text-primary font-bold text-2xl">
-                {course.id.split('-')[1]}
-              </span>
-            </div>
-            <div className="flex-1 p-5 flex flex-col">
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-medium text-gray-900 flex-grow pr-4">
-                  {course.title}
-                </h3>
-                <div className="flex items-center space-x-4">
-                  <span className="text-gray-900 font-medium">${course.price / 100}</span>
-                  <div className={`h-6 w-6 rounded-md border-2 flex items-center justify-center transition-colors ${
-                    selectedCourses.includes(course.id)
-                      ? 'bg-primary border-primary'
-                      : 'border-gray-300 group-hover:border-primary/50'
-                  }`}>
-                    {selectedCourses.includes(course.id) && (
-                      <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Expandable class list */}
+        {showIndividualClasses && (
+          <div className="mt-6 space-y-4 border-t pt-4">
+            {courses.map(course => (
+              <div 
+                key={course.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectCourse(course.id);
+                  // If all courses are selected after this change, close the section
+                  const willBeSelected = !selectedCourses.includes(course.id);
+                  if (willBeSelected && selectedCourses.length === courses.length - 1) {
+                    setShowIndividualClasses(false);
+                  }
+                }}
+                className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                  selectedCourses.includes(course.id)
+                    ? 'border-primary bg-primary/5'
+                    : 'border-gray-200 hover:border-primary/30'
+                }`}
+              >
+                <div className="flex items-start space-x-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedCourses.includes(course.id)}
+                    onChange={() => {}} // Handled by parent div click
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <div>
+                    <h3 className="font-medium text-gray-900">{course.title}</h3>
+                    <p className="text-sm text-gray-600">
+                      {course.date} • ${(course.price / 100).toFixed(2)}
+                    </p>
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-gray-600">{course.description}</p>
-              <div className="mt-auto pt-3">
-                <p className="text-sm text-primary">Live or watch recording - {course.date}</p>
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
+      {/* Re-Attunement Add-on */}
       <div 
-        onClick={selectedCourses.length > 0 ? handleReattunementToggle : undefined}
-        className={`bg-white rounded-lg shadow transition-all h-full flex overflow-hidden ${
-          selectedCourses.length > 0 
-            ? 'hover:shadow-md cursor-pointer' 
-            : 'opacity-50 cursor-not-allowed'
+        onClick={onToggleReattunement}
+        className={`bg-white rounded-xl p-6 border transition-colors cursor-pointer ${
+          includeReattunement
+            ? 'border-primary bg-primary/5'
+            : 'border-gray-200 hover:border-primary/30'
         }`}
       >
-        <div className="w-16 bg-primary/5 flex flex-col items-center justify-start py-4 border-r border-primary/10">
-          <span className="text-primary/70 text-xs font-medium mb-1">Add-on</span>
-          <span className="text-primary/70 font-bold text-2xl">+</span>
+        <div className="flex items-start justify-between">
+          <h2 className="text-xl font-medium text-gray-900">
+            Enhance Your Experience
+            <span className="ml-2 text-sm text-primary font-normal">Add-on</span>
+          </h2>
         </div>
-        <div className="flex-1 p-5 flex flex-col">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-medium text-gray-900 flex-grow pr-4">
-              {reattunement.title}
-            </h3>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-900 font-medium">${reattunement.price / 100}</span>
-              <div className={`h-6 w-6 rounded-md border-2 flex items-center justify-center transition-colors ${
-                includeReattunement
-                  ? 'bg-primary border-primary'
-                  : selectedCourses.length > 0
-                    ? 'border-gray-300 group-hover:border-primary/50'
-                    : 'border-gray-300'
-              }`}>
-                {includeReattunement && (
-                  <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </div>
-            </div>
-          </div>
-          <p className="text-sm text-gray-600">Optional add-on - Scheduled separately</p>
-          <div className="mt-auto pt-3">
-            <p className="text-sm text-primary">
-              Regular price <span className="line-through">$197</span> - Special price $97
-            </p>
-            {selectedCourses.length === 0 && (
-              <p className="text-sm text-gray-500 italic mt-1">
-                Select at least one class to add this option
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 p-6 bg-white rounded-lg shadow-lg border-t-2 border-primary">
-        <div className="flex justify-between items-center">
+        <div className="mt-4 flex items-start space-x-4">
+          <input
+            type="checkbox"
+            checked={includeReattunement}
+            onChange={onToggleReattunement}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary disabled:opacity-50"
+          />
           <div>
-            <span className="text-lg font-medium text-gray-900">Total Amount</span>
+            <h3 className="font-medium text-gray-900">{reattunement.title}</h3>
             <p className="text-sm text-gray-600 mt-1">
-              {selectedCourses.length === courses.length 
-                ? 'Full 5-Part Experience' 
-                : `${selectedCourses.length} ${selectedCourses.length === 1 ? 'class' : 'classes'}`}
-              {includeReattunement ? ' + Re-attunement' : ''}
+              One-on-one session with Michal
             </p>
-          </div>
-          <div className="text-right">
-            <span className="text-3xl font-bold text-primary">
-              ${calculateTotal() / 100}
-            </span>
-            {selectedCourses.length === courses.length && (
-              <p className="text-sm text-primary mt-1">Full Experience savings: $80</p>
-            )}
+            <p className="text-sm text-gray-900 mt-1">
+              ${(reattunement.price / 100).toFixed(2)}
+            </p>
           </div>
         </div>
       </div>

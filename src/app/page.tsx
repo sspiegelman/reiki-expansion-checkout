@@ -8,10 +8,21 @@ import { COURSES, REATTUNEMENT, COURSE_TITLE, COURSE_SUBTITLE, COURSE_DESCRIPTIO
 export default function Home() {
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [includeReattunement, setIncludeReattunement] = useState(false);
+  const [paymentOption, setPaymentOption] = useState<'full' | 'split-2' | 'split-3'>('full');
 
   const handleSelectionChange = (courses: string[], reattunement: boolean) => {
     setSelectedCourses(courses);
     setIncludeReattunement(reattunement);
+  };
+
+  const handleBundleSelection = (selected: boolean) => {
+    if (selected) {
+      // Select all courses at once with bundle price
+      setSelectedCourses(COURSES.map(course => course.id));
+    } else {
+      // Clear all selections
+      setSelectedCourses([]);
+    }
   };
 
   return (
@@ -30,11 +41,32 @@ export default function Home() {
         </div>
 
         <div className="mt-12">
-          <CourseList
-            courses={COURSES}
-            reattunement={REATTUNEMENT}
-            onSelectionChange={handleSelectionChange}
-          />
+      <CourseList
+        courses={COURSES}
+        reattunement={REATTUNEMENT}
+        selectedCourses={selectedCourses}
+        includeReattunement={includeReattunement}
+        onSelectCourse={(courseId) => {
+          // If course is already selected, remove it
+          if (selectedCourses.includes(courseId)) {
+            handleSelectionChange(
+              selectedCourses.filter(id => id !== courseId),
+              includeReattunement
+            );
+          } else {
+            // If course is not selected, add it
+            handleSelectionChange(
+              [...selectedCourses, courseId],
+              includeReattunement
+            );
+          }
+        }}
+        onBundleSelection={handleBundleSelection}
+        onToggleReattunement={() => {
+          handleSelectionChange(selectedCourses, !includeReattunement);
+        }}
+        onPaymentOptionChange={setPaymentOption}
+      />
           <div className="mt-8">
             <CheckoutButton
               selectedCourses={selectedCourses}
@@ -42,10 +74,12 @@ export default function Home() {
               courses={COURSES}
               reattunement={REATTUNEMENT}
               disabled={selectedCourses.length === 0}
+              paymentOption={paymentOption}
+              onPaymentOptionChange={setPaymentOption}
             />
           </div>
           <p className="mt-4 text-sm text-center text-gray-600">
-            You will receive a welcome email with access instructions after purchase.
+            You will receive a welcome email with course information after purchase.
           </p>
         </div>
       </div>
