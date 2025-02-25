@@ -42,18 +42,18 @@ export default async function SuccessPage({
               </li>
               <li className="flex items-start">
                 <span className="mr-2">2.</span>
-                {session?.metadata?.items && 
-                  JSON.parse(session.metadata.items).some((item: MetadataItem) => 
-                    item.name === REATTUNEMENT.title
-                  ) && (
-                    <span>We&apos;ll contact you shortly to schedule your Re-Attunement session</span>
-                  )
-                }
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2">3.</span>
                 Mark your calendar for your first live class
               </li>
+              {session?.metadata?.items && 
+                JSON.parse(session.metadata.items).some((item: MetadataItem) => 
+                  item.name === REATTUNEMENT.title
+                ) && (
+                  <li className="flex items-start">
+                    <span className="mr-2">3.</span>
+                    We&apos;ll contact you shortly to schedule your Re-Attunement session
+                  </li>
+                )
+              }
             </ul>
           </div>
 

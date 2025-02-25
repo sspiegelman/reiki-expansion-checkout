@@ -24,6 +24,11 @@ const CheckoutForm = ({
   const elements = useElements();
 
   const [error, setError] = useState<string | null>(null);
+  const [contactInfo, setContactInfo] = useState({
+    fullName: '',
+    email: '',
+    phone: ''
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +48,8 @@ const CheckoutForm = ({
             type: payments === 1 ? 'full_payment' : 'split_payment',
             payment_number: '1',
             total_payments: payments.toString(),
-            total_amount: totalAmount.toString()
+            total_amount: totalAmount.toString(),
+            contact_info: JSON.stringify(contactInfo)
           }
         })
       });
@@ -59,7 +65,9 @@ const CheckoutForm = ({
         payment_method: {
           card: elements.getElement(CardElement)!,
           billing_details: {
-            email: '', // Will be collected by Stripe
+            name: contactInfo.fullName,
+            email: contactInfo.email,
+            phone: contactInfo.phone
           },
         },
         ...(payments > 1 ? { setup_future_usage: 'off_session' } : {}) // Only enable for split payments
@@ -82,6 +90,47 @@ const CheckoutForm = ({
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-4 mt-6">
+        {/* Contact Information */}
+        <div className="space-y-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name
+            </label>
+            <input
+              type="text"
+              required
+              value={contactInfo.fullName}
+              onChange={e => setContactInfo(prev => ({...prev, fullName: e.target.value}))}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              required
+              value={contactInfo.email}
+              onChange={e => setContactInfo(prev => ({...prev, email: e.target.value}))}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone
+            </label>
+            <input
+              type="tel"
+              required
+              value={contactInfo.phone}
+              onChange={e => setContactInfo(prev => ({...prev, phone: e.target.value}))}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            />
+          </div>
+        </div>
+
+        {/* Card Element */}
         <div className="rounded-md border border-gray-300 p-4">
           <CardElement
             options={{
