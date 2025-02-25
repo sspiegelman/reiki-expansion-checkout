@@ -1,4 +1,4 @@
-import { getSessionDetails } from '@/lib/stripe';
+import { stripe } from '@/lib/stripe';
 import { REATTUNEMENT } from '@/config/courses';
 import Link from 'next/link';
 
@@ -10,15 +10,18 @@ interface MetadataItem {
 export default async function SuccessPage({
   searchParams,
 }: {
-  searchParams: { session_id: string };
+  searchParams: { payment_intent: string; payment_intent_client_secret: string };
 }) {
-  let session;
+  let paymentIntent;
   try {
-    if (searchParams.session_id) {
-      session = await getSessionDetails(searchParams.session_id);
+    if (searchParams.payment_intent) {
+      paymentIntent = await stripe.paymentIntents.retrieve(
+        searchParams.payment_intent,
+        { expand: ['payment_method'] }
+      );
     }
   } catch (error) {
-    console.error('Error fetching session:', error);
+    console.error('Error fetching payment:', error);
   }
 
   return (
@@ -44,8 +47,8 @@ export default async function SuccessPage({
                 <span className="mr-2">2.</span>
                 Mark your calendar for your first live class
               </li>
-              {session?.metadata?.items && 
-                JSON.parse(session.metadata.items).some((item: MetadataItem) => 
+              {paymentIntent?.metadata?.items && 
+                JSON.parse(paymentIntent.metadata.items).some((item: MetadataItem) => 
                   item.name === REATTUNEMENT.title
                 ) && (
                   <li className="flex items-start">
@@ -57,22 +60,20 @@ export default async function SuccessPage({
             </ul>
           </div>
 
-          {session && (
+          {paymentIntent && (
             <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary:</h2>
               <div className="space-y-3">
-                {session.line_items?.data.map((item, index) => (
-                  <div key={index} className="flex justify-between text-gray-600">
-                    <span>{item.description}</span>
-                    <span>${(item.amount_total / 100).toFixed(2)}</span>
+                {JSON.parse(paymentIntent.metadata.items || '[]').map((item: MetadataItem) => (
+                  <div key={item.name} className="flex justify-between text-gray-600">
+                    <span>{item.name}</span>
+                    <span>${(item.price / 100).toFixed(2)}</span>
                   </div>
                 ))}
-                {session.amount_total && (
-                  <div className="border-t pt-3 flex justify-between font-semibold text-gray-900">
-                    <span>Total</span>
-                    <span>${(session.amount_total / 100).toFixed(2)}</span>
-                  </div>
-                )}
+                <div className="border-t pt-3 flex justify-between font-semibold text-gray-900">
+                  <span>Total</span>
+                  <span>${(paymentIntent.amount / 100).toFixed(2)}</span>
+                </div>
               </div>
             </div>
           )}
