@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 
+// These interfaces are used in the function parameters
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface CustomerInfo {
   fullName: string;
   email: string;
   phone: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface Item {
   name: string;
   price: number;
