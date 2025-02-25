@@ -54,7 +54,7 @@ export function CheckoutButton({
       setIsLoading(true);
 
       let selectedItems = [];
-      let checkoutOptions = {};
+      const checkoutOptions = {};
       
       if (selectedCourses.length === courses.length) {
         // Bundle price for all classes
