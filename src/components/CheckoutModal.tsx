@@ -5,6 +5,19 @@ import { useState } from 'react';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY!);
 
+const getMonthlyPaymentDates = (payments: number) => {
+  const today = new Date();
+  return Array.from({ length: payments - 1 }, (_, i) => {
+    const date = new Date(today);
+    date.setMonth(today.getMonth() + i + 1);
+    return date.toLocaleDateString('en-US', { 
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  });
+};
+
 const CheckoutForm = ({ 
   splitAmount, 
   totalAmount,
@@ -247,25 +260,24 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
               ))}
             </div>
 
-            {/* Payment Schedule */}
-            <div className="space-y-2">
-              <h3 className="text-base sm:text-lg font-medium">Payment Schedule:</h3>
-              {payments === 1 ? (
-                <p>• One-time payment: ${splitAmountFormatted}</p>
-              ) : (
-                <>
-                  <p>• First Payment Today: ${splitAmountFormatted}</p>
-                  {payments === 2 ? (
-                    <p>• Final Payment in 30 days: ${splitAmountFormatted}</p>
-                  ) : (
-                    <>
-                      <p>• Second Payment in 30 days: ${splitAmountFormatted}</p>
-                      <p>• Final Payment in 60 days: ${splitAmountFormatted}</p>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
+            {/* Payment Schedule - Only show for split payments */}
+            {payments > 1 && (
+              <div className="space-y-2">
+                <h3 className="text-base sm:text-lg font-medium">Payment Schedule</h3>
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span>Today</span>
+                    <span>${splitAmountFormatted}</span>
+                  </div>
+                  {getMonthlyPaymentDates(payments).map((date) => (
+                    <div key={date} className="flex justify-between items-center">
+                      <span>{date}</span>
+                      <span>${splitAmountFormatted}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Total Value */}
             <div className="border-t pt-4">
