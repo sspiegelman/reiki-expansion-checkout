@@ -1,242 +1,86 @@
-import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
-
-interface StripeError extends Error {
-  type?: string;
-  code?: string;
-  decline_code?: string;
-  payment_intent?: {
-    id: string;
-    status: string;
-  };
-}
-
-interface WebhookItem {
-  name: string;
-  price: number;
-}
-
-interface WebhookData {
-  event: string;
-  customer?: {
-    email?: string | null;
-    name?: string | null;
-    phone?: string | null;
-    address?: Stripe.Address | null;
-  };
-  purchase?: {
-    items: WebhookItem[];
-    total: number | null;
-    isFullExperience: boolean;
-    hasReattunement: boolean;
-  };
-  payment: {
-    status: string;
-    id: string | null;
-    amount?: number;
-    error?: string | null;
-    metadata?: Record<string, string>;
-  };
-}
-
-async function sendToMake(data: WebhookData) {
-  if (!process.env.MAKE_WEBHOOK_URL) {
-    console.warn('MAKE_WEBHOOK_URL not set, skipping Make.com integration');
-    return;
-  }
-
-  try {
-    const response = await fetch(process.env.MAKE_WEBHOOK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Make.com webhook failed: ${response.statusText}`);
-    }
-
-    console.log('Successfully sent to Make.com:', {
-      event: data.event,
-      customer: data.customer?.email,
-      payment_id: data.payment?.id
-    });
-  } catch (error) {
-    const err = error as Error;
-    console.error('Error sending to Make.com:', {
-      message: err.message,
-      data: {
-        event: data.event,
-        customer: data.customer?.email,
-        payment_id: data.payment?.id
-      }
-    });
-  }
-}
-
-async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-  console.log('Processing successful payment:', {
-    id: paymentIntent.id,
-    amount: paymentIntent.amount,
-    metadata: paymentIntent.metadata
-  });
-
-  // Handle split payments
-  if (paymentIntent.metadata.type === 'split_payment') {
-    const paymentNumber = parseInt(paymentIntent.metadata.payment_number);
-    const totalPayments = parseInt(paymentIntent.metadata.total_payments);
-    const totalAmount = parseInt(paymentIntent.metadata.total_amount);
-
-    // If this wasn't the last payment, schedule the next one
-    if (paymentNumber < totalPayments) {
-      const nextPaymentDate = new Date();
-      nextPaymentDate.setDate(nextPaymentDate.getDate() + 30); // 30 days from now
-
-      // Store next payment details in metadata
-      await sendToMake({
-        event: 'payment_intent.succeeded',
-        payment: {
-          status: 'completed',
-          id: paymentIntent.id,
-          amount: paymentIntent.amount,
-          metadata: {
-            type: 'split_payment',
-            payment_number: paymentNumber.toString(),
-            total_payments: totalPayments.toString(),
-            next_payment_date: nextPaymentDate.toISOString(),
-            next_payment_amount: paymentIntent.amount.toString()
-          }
-        }
-      });
-    } else {
-      // Final payment completed
-      await sendToMake({
-        event: 'payment_intent.succeeded',
-        payment: {
-          status: 'completed',
-          id: paymentIntent.id,
-          amount: paymentIntent.amount,
-          metadata: {
-            type: 'split_payment',
-            payment_number: paymentNumber.toString(),
-            total_payments: totalPayments.toString(),
-            final_payment: 'true'
-          }
-        }
-      });
-    }
-  } else {
-    // Regular full payment
-    await sendToMake({
-      event: 'payment_intent.succeeded',
-      payment: {
-        status: 'completed',
-        id: paymentIntent.id,
-        amount: paymentIntent.amount
-      }
-    });
-  }
-}
-
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  if (session.status !== 'complete') {
-    console.log('Skipping webhook, session not complete');
-    return;
-  }
-
-  const items = session.metadata?.items ? JSON.parse(session.metadata.items) as WebhookItem[] : [];
-  
-  console.log('Processing completed checkout:', {
-    session_id: session.id,
-    customer: session.customer_details?.email,
-    items: items.map(i => i.name)
-  });
-
-  await sendToMake({
-    event: 'checkout.session.completed',
-    customer: {
-      email: session.customer_details?.email,
-      name: session.customer_details?.name,
-      phone: session.customer_details?.phone,
-      address: session.customer_details?.address ? {
-        city: session.customer_details.address.city,
-        country: session.customer_details.address.country,
-        line1: session.customer_details.address.line1,
-        line2: session.customer_details.address.line2 || null,
-        postal_code: session.customer_details.address.postal_code,
-        state: session.customer_details.address.state
-      } : null
-    },
-    purchase: {
-      items,
-      total: session.amount_total,
-      isFullExperience: items.some(i => i.name === "Reiki Expansion & Reactivation: A Five-Part Immersive Course"),
-      hasReattunement: items.some(i => i.name.includes("Re-Attunement"))
-    },
-    payment: {
-      status: 'completed',
-      id: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null
-    }
-  });
-}
+import { stripe } from '@/lib/stripe';
 
 export async function POST(request: Request) {
-  const body = await request.text();
-  const signature = headers().get('stripe-signature');
-
-  if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
-    console.error('Webhook configuration error:', {
-      has_signature: !!signature,
-      has_secret: !!process.env.STRIPE_WEBHOOK_SECRET
-    });
-    return NextResponse.json(
-      { error: 'Missing signature or webhook secret' },
-      { status: 400 }
-    );
-  }
-
-  let event: Stripe.Event;
-
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+    const body = await request.text();
+    const signature = request.headers.get('stripe-signature') as string;
 
-    console.log('Received webhook event:', {
+    let event: Stripe.Event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        body,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    } catch (err) {
+      const error = err as Error;
+      console.error('Webhook signature verification failed:', error.message);
+      return NextResponse.json(
+        { error: 'Webhook signature verification failed' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Webhook event received:', {
       type: event.type,
       id: event.id
     });
 
     switch (event.type) {
-      case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
-        break;
-      case 'payment_intent.succeeded':
-        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
-        break;
-      default:
-        console.log('Ignoring webhook event:', event.type);
-    }
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const metadata = session.metadata;
 
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    const err = error as StripeError;
-    console.error('Webhook error:', {
-      message: err.message,
-      type: err.type,
-      code: err.code,
-      decline_code: err.decline_code,
-      payment_intent: err.payment_intent
-    });
+        if (!metadata) {
+          console.error('No metadata found in session:', session.id);
+          return NextResponse.json(
+            { error: 'No metadata found in session' },
+            { status: 400 }
+          );
+        }
+
+        // Parse items from metadata
+        const items = JSON.parse(metadata.items);
+        console.log('Processing completed checkout session:', {
+          session_id: session.id,
+          customer_email: session.customer_details?.email,
+          items
+        });
+
+        // Handle split payments
+        if (metadata.payments_remaining) {
+          const paymentsRemaining = parseInt(metadata.payments_remaining, 10);
+          const splitAmount = parseInt(metadata.split_amount, 10);
+
+          console.log('Processing split payment:', {
+            payments_remaining: paymentsRemaining,
+            split_amount: splitAmount
+          });
+
+          // Create payment schedule for remaining payments
+          // This is where you would set up future payments
+        }
+
+        // Send confirmation email
+        // This is where you would send the confirmation email with course access
+
+        return NextResponse.json({ success: true });
+      }
+
+      default: {
+        console.log(`Unhandled event type: ${event.type}`);
+        return NextResponse.json({ success: true });
+      }
+    }
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Webhook error:', err.message);
     return NextResponse.json(
       { error: 'Webhook handler failed' },
-      { status: 400 }
+      { status: 500 }
     );
   }
 }

@@ -22,7 +22,6 @@ export function CheckoutButton({
   paymentOption = 'full',
   onPaymentOptionChange
 }: CheckoutButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const getPaymentOptions = (): PaymentDetails[] => {
     // Calculate total based on selected items
     let total = selectedCourses.length === courses.length
@@ -59,7 +58,6 @@ export function CheckoutButton({
 
     // 3 payments
     const threePaymentAmount = Math.round(total / 3);
-    const remainingAmount = total - (threePaymentAmount * 2);
     options.push({
       type: 'split-3' as const,
       label: `3 payments × $${(threePaymentAmount / 100).toFixed(2)}`,
@@ -112,18 +110,6 @@ export function CheckoutButton({
     return items;
   };
 
-  const getPaymentScheduleDetails = () => {
-    const paymentDetails = getPaymentOptions().find(option => option.type === paymentOption);
-    if (!paymentDetails?.splitAmount) return null;
-
-    const payments = paymentOption === 'split-2' ? 2 : 3;
-    return {
-      splitAmount: paymentDetails.splitAmount,
-      totalAmount: paymentDetails.amount,
-      payments
-    };
-  };
-
   return (
     <>
       <div className="space-y-4">
@@ -152,14 +138,14 @@ export function CheckoutButton({
           <div className="flex-1">
             <button
               onClick={handleCheckout}
-              disabled={disabled || isLoading}
+              disabled={disabled}
               className={`w-full py-3 px-4 text-white font-medium rounded-lg transition-colors ${
-                disabled || isLoading
+                disabled
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-primary hover:bg-primary/90'
               }`}
             >
-              {isLoading ? 'Processing...' : 'Proceed to Checkout'}
+              Proceed to Checkout
             </button>
           </div>
           

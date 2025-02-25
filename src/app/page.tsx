@@ -65,7 +65,6 @@ export default function Home() {
         onToggleReattunement={() => {
           handleSelectionChange(selectedCourses, !includeReattunement);
         }}
-        onPaymentOptionChange={setPaymentOption}
       />
           <div className="mt-8">
             <CheckoutButton

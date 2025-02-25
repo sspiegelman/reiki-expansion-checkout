@@ -9,7 +9,6 @@ interface CourseListProps {
   includeReattunement: boolean;
   onSelectCourse: (courseId: string) => void;
   onToggleReattunement: () => void;
-  onPaymentOptionChange: (option: 'full' | 'split-2' | 'split-3') => void;
   onBundleSelection: (selected: boolean) => void;
 }
 
@@ -20,11 +19,9 @@ export function CourseList({
   includeReattunement,
   onSelectCourse,
   onToggleReattunement,
-  onPaymentOptionChange,
   onBundleSelection
 }: CourseListProps) {
   const [showIndividualClasses, setShowIndividualClasses] = useState(false);
-  const [selectedPaymentOption, setSelectedPaymentOption] = useState<'full' | 'split-2' | 'split-3'>('full');
 
   return (
     <div className="space-y-8">
@@ -67,7 +64,6 @@ export function CourseList({
               {selectedCourses.length === courses.length ? 'Full Course Selected' : 'Select Full Course'}
             </button>
           </div>
-
         </div>
       </div>
 

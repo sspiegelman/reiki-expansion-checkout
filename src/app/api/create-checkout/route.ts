@@ -48,12 +48,9 @@ export async function POST(request: Request) {
 
     if (options?.payment_schedule) {
       const { split_amount, payments, total_amount } = options.payment_schedule;
-      const splitAmountFormatted = (split_amount / 100).toFixed(2);
 
       // Calculate remaining amount for last payment
       const remainingAmount = total_amount - (split_amount * (payments - 1));
-      const remainingFormatted = (remainingAmount / 100).toFixed(2);
-      const totalFormatted = (total_amount / 100).toFixed(2);
 
       // Create line items with actual prices
       checkoutItems = [
