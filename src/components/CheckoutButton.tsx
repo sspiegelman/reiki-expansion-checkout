@@ -169,8 +169,8 @@ export function CheckoutButton({
         paymentSchedule={{
           splitAmount: selectedCourses.length === courses.length && paymentOption !== 'full'
             ? paymentOption === 'split-2'
-              ? Math.round(BUNDLE_PRICE / 2)
-              : Math.round(BUNDLE_PRICE / 3)
+              ? Math.round(getSelectedItems().reduce((sum, item) => sum + item.price, 0) / 2)
+              : Math.round(getSelectedItems().reduce((sum, item) => sum + item.price, 0) / 3)
             : getSelectedItems().reduce((sum, item) => sum + item.price, 0),
           totalAmount: getSelectedItems().reduce((sum, item) => sum + item.price, 0),
           payments: selectedCourses.length === courses.length && paymentOption !== 'full'
