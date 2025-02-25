@@ -70,10 +70,37 @@ export default async function SuccessPage({
                     <span>${(item.price / 100).toFixed(2)}</span>
                   </div>
                 ))}
+                
                 <div className="border-t pt-3 flex justify-between font-semibold text-gray-900">
-                  <span>Total</span>
-                  <span>${(paymentIntent.amount / 100).toFixed(2)}</span>
+                  <span>Total Value</span>
+                  <span>${(parseInt(paymentIntent.metadata.total_amount || paymentIntent.amount.toString()) / 100).toFixed(2)}</span>
                 </div>
+                
+                {paymentIntent.metadata.total_payments && parseInt(paymentIntent.metadata.total_payments) > 1 ? (
+                  <>
+                    <div className="flex justify-between text-gray-700">
+                      <span>Amount Paid Today</span>
+                      <span>${(paymentIntent.amount / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-700">
+                      <span>Payment Plan</span>
+                      <span>{paymentIntent.metadata.total_payments} payments</span>
+                    </div>
+                    {parseInt(paymentIntent.metadata.total_payments) > 1 && (
+                      <div className="flex justify-between text-gray-700">
+                        <span>Remaining Payments</span>
+                        <span>
+                          {parseInt(paymentIntent.metadata.total_payments) - 1} × ${(paymentIntent.amount / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex justify-between text-gray-700">
+                    <span>Amount Paid</span>
+                    <span>${(paymentIntent.amount / 100).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}

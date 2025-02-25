@@ -24,7 +24,8 @@ const CheckoutForm = ({
   payments,
   onClose,
   isLoading,
-  setIsLoading 
+  setIsLoading,
+  items
 }: { 
   splitAmount: number;
   totalAmount: number;
@@ -32,6 +33,7 @@ const CheckoutForm = ({
   onClose: () => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  items: { name: string; price: number; }[];
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -57,6 +59,7 @@ const CheckoutForm = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           amount: splitAmount,
+          items: items, // Pass items to the payment intent
           metadata: {
             type: payments === 1 ? 'full_payment' : 'split_payment',
             payment_number: '1',
@@ -91,7 +94,7 @@ const CheckoutForm = ({
       }
 
       // Payment successful
-      window.location.href = '/success';
+      window.location.href = `/success?payment_intent=${result.paymentIntent.id}&payment_intent_client_secret=${clientSecret}`;
     } catch (error) {
       console.error('Error:', error);
       setError(error instanceof Error ? error.message : 'Payment failed. Please try again.');
@@ -294,6 +297,7 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
               onClose={onClose}
               isLoading={isLoading}
               setIsLoading={setIsLoading}
+              items={items}
             />
           </div>
         </Dialog.Panel>

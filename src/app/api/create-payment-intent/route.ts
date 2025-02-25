@@ -4,7 +4,7 @@ import { stripe } from '@/lib/stripe';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { amount, metadata } = body;
+    const { amount, metadata, items } = body;
 
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
@@ -17,6 +17,7 @@ export async function POST(request: Request) {
         payment_number: '1',
         total_payments: metadata.total_payments,
         total_amount: metadata.total_amount.toString(),
+        items: items ? JSON.stringify(items) : '[]',
         ...metadata
       }
     });
