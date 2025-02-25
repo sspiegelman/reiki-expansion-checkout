@@ -30,42 +30,105 @@ export async function POST(request: Request) {
     });
 
     switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const metadata = session.metadata;
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const metadata = paymentIntent.metadata;
 
-        if (!metadata) {
-          console.error('No metadata found in session:', session.id);
-          return NextResponse.json(
-            { error: 'No metadata found in session' },
-            { status: 400 }
-          );
-        }
-
-        // Parse items from metadata
-        const items = JSON.parse(metadata.items);
-        console.log('Processing completed checkout session:', {
-          session_id: session.id,
-          customer_email: session.customer_details?.email,
-          items
+        console.log('Processing successful payment:', {
+          payment_intent_id: paymentIntent.id,
+          amount: paymentIntent.amount,
+          metadata
         });
 
-        // Handle split payments
-        if (metadata.payments_remaining) {
-          const paymentsRemaining = parseInt(metadata.payments_remaining, 10);
-          const splitAmount = parseInt(metadata.split_amount, 10);
+        // Parse customer info
+        const contactInfo = JSON.parse(metadata.contact_info || '{}');
+        console.log('Customer info:', contactInfo);
 
-          console.log('Processing split payment:', {
-            payments_remaining: paymentsRemaining,
-            split_amount: splitAmount
+        // Send to Make.com webhook
+        try {
+          const makeResponse = await fetch(process.env.MAKE_WEBHOOK_URL!, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'payment.succeeded',
+              timestamp: new Date().toISOString(),
+              customer: {
+                fullName: contactInfo.fullName,
+                email: contactInfo.email,
+                phone: contactInfo.phone
+              },
+              payment: {
+                id: paymentIntent.id,
+                amount: paymentIntent.amount,
+                currency: paymentIntent.currency,
+                status: 'succeeded',
+                paymentType: metadata.type,
+                paymentNumber: metadata.payment_number,
+                totalPayments: metadata.total_payments,
+                totalAmount: metadata.total_amount
+              },
+              items: JSON.parse(metadata.items || '[]')
+            })
           });
 
-          // Create payment schedule for remaining payments
-          // This is where you would set up future payments
+          if (!makeResponse.ok) {
+            console.error('Make.com webhook failed:', await makeResponse.text());
+          } else {
+            console.log('Successfully sent to Make.com');
+          }
+        } catch (error) {
+          console.error('Error sending to Make.com:', error);
         }
 
-        // Send confirmation email
-        // This is where you would send the confirmation email with course access
+        return NextResponse.json({ success: true });
+      }
+
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const metadata = paymentIntent.metadata;
+        const contactInfo = JSON.parse(metadata.contact_info || '{}');
+        
+        console.log('Payment failed:', {
+          payment_intent_id: paymentIntent.id,
+          error: paymentIntent.last_payment_error
+        });
+
+        // Send failure to Make.com
+        try {
+          const makeResponse = await fetch(process.env.MAKE_WEBHOOK_URL!, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'payment.failed',
+              timestamp: new Date().toISOString(),
+              customer: {
+                fullName: contactInfo.fullName,
+                email: contactInfo.email,
+                phone: contactInfo.phone
+              },
+              payment: {
+                id: paymentIntent.id,
+                amount: paymentIntent.amount,
+                currency: paymentIntent.currency,
+                status: 'failed',
+                error: paymentIntent.last_payment_error?.message,
+                paymentType: metadata.type,
+                paymentNumber: metadata.payment_number,
+                totalPayments: metadata.total_payments,
+                totalAmount: metadata.total_amount
+              },
+              items: JSON.parse(metadata.items || '[]')
+            })
+          });
+
+          if (!makeResponse.ok) {
+            console.error('Make.com webhook failed:', await makeResponse.text());
+          } else {
+            console.log('Successfully sent failure to Make.com');
+          }
+        } catch (error) {
+          console.error('Error sending to Make.com:', error);
+        }
 
         return NextResponse.json({ success: true });
       }
