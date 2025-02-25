@@ -89,9 +89,9 @@ const CheckoutForm = ({
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="space-y-4 mt-6">
+      <div className="space-y-3 sm:space-y-4 mt-4 sm:mt-6">
         {/* Contact Information */}
-        <div className="space-y-4 mb-6">
+        <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Full Name
@@ -131,7 +131,7 @@ const CheckoutForm = ({
         </div>
 
         {/* Card Element */}
-        <div className="rounded-md border border-gray-300 p-4">
+        <div className="rounded-md border border-gray-300 p-3 sm:p-4">
           <CardElement
             options={{
               style: {
@@ -157,18 +157,18 @@ const CheckoutForm = ({
         )}
       </div>
 
-      <div className="flex justify-end gap-3 mt-6">
+      <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-800"
+          className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-800"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isLoading || !stripe}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md disabled:opacity-50"
+          className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md disabled:opacity-50"
         >
           {isLoading ? 'Processing...' : `Pay $${(splitAmount / 100).toFixed(2)}`}
         </button>
@@ -203,9 +203,9 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+        <Dialog.Panel className="w-full max-w-lg rounded-lg bg-white p-4 sm:p-6 shadow-xl">
           <div className="flex justify-between items-center">
-            <Dialog.Title className="text-xl font-semibold text-gray-900">
+            <Dialog.Title className="text-lg sm:text-xl font-semibold text-gray-900">
               Checkout
             </Dialog.Title>
             <button
@@ -220,23 +220,23 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
             </button>
           </div>
 
-          <div className="mt-6 space-y-6">
+          <div className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
             {/* First Payment */}
             <div className="flex justify-between items-center border-b pb-4">
               <div>
-                <h3 className="font-medium">
+                <h3 className="text-base sm:text-lg font-medium">
                   {payments === 1 ? 'Payment' : 'First Payment Today'}
                 </h3>
                 {payments > 1 && (
                   <p className="text-sm text-gray-500">Payment 1 of {payments}</p>
                 )}
               </div>
-              <span className="text-xl font-semibold">${splitAmountFormatted}</span>
+              <span className="text-lg sm:text-xl font-semibold">${splitAmountFormatted}</span>
             </div>
 
             {/* Selected Items */}
-            <div className="space-y-4">
-              <h3 className="font-medium">Selected Items:</h3>
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base sm:text-lg font-medium">Selected Items:</h3>
               {items.map((item, index) => (
                 <div key={index} className="space-y-1">
                   <p>{item.name}</p>
@@ -249,7 +249,7 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
 
             {/* Payment Schedule */}
             <div className="space-y-2">
-              <h3 className="font-medium">Payment Schedule:</h3>
+              <h3 className="text-base sm:text-lg font-medium">Payment Schedule:</h3>
               {payments === 1 ? (
                 <p>• One-time payment: ${splitAmountFormatted}</p>
               ) : (
@@ -270,8 +270,8 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
             {/* Total Value */}
             <div className="border-t pt-4">
               <div className="flex justify-between items-center">
-                <span className="font-medium">Total Value:</span>
-                <span className="text-lg font-semibold">${totalAmountFormatted}</span>
+                <span className="text-base sm:text-lg font-medium">Total Value:</span>
+                <span className="text-lg sm:text-xl font-semibold">${totalAmountFormatted}</span>
               </div>
             </div>
 
