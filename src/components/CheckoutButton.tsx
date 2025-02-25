@@ -38,12 +38,12 @@ export function CheckoutButton({
       },
       {
         type: 'split-2',
-        label: `2 payments of $${(total / 200).toFixed(2)}`,
+        label: `2 payments of $${(total / 200).toFixed(2)} (Today + 30 days)`,
         amount: total
       },
       {
         type: 'split-3',
-        label: `3 payments of $${(total / 300).toFixed(2)}`,
+        label: `3 payments of $${(total / 300).toFixed(2)} (Today + 30/60 days)`,
         amount: total
       }
     ];
@@ -63,23 +63,41 @@ export function CheckoutButton({
           price: BUNDLE_PRICE
         });
 
-        // Add payment plan options for bundle
+        // Calculate total including re-attunement if selected
+        const total = includeReattunement ? BUNDLE_PRICE + reattunement.price : BUNDLE_PRICE;
+
         if (paymentOption !== 'full') {
           const payments = paymentOption === 'split-2' ? 2 : 3;
-          checkoutOptions = {
-            payment_intent_data: {
-              setup_future_usage: 'off_session'
-            },
-            after_completion: {
-              type: 'payment_plan',
-              payment_plan: {
-                amount_total: includeReattunement ? BUNDLE_PRICE + reattunement.price : BUNDLE_PRICE,
-                currency: 'usd',
-                interval: 'month',
-                interval_count: payments
-              }
-            }
-          };
+          const splitAmount = Math.floor(total / payments);
+          
+          selectedItems = [{
+            name: [
+              `Reiki Expansion & Reactivation${includeReattunement ? ' with Re-Attunement' : ''}`,
+              'Payment Schedule:',
+              `• First payment: $${(splitAmount / 100).toFixed(2)} today`,
+              ...(payments === 2 
+                ? [`• Final payment: $${(splitAmount / 100).toFixed(2)} in 30 days`]
+                : [
+                    `• Second payment: $${(splitAmount / 100).toFixed(2)} in 30 days`,
+                    `• Final payment: $${(splitAmount / 100).toFixed(2)} in 60 days`
+                  ]
+              )
+            ].join('\n'),
+            price: splitAmount
+          }];
+        } else {
+          // Full payment - add bundle and re-attunement separately
+          selectedItems = [{
+            name: "Reiki Expansion & Reactivation: A Five-Part Immersive Course",
+            price: BUNDLE_PRICE
+          }];
+          
+          if (includeReattunement) {
+            selectedItems.push({
+              name: reattunement.title,
+              price: reattunement.price
+            });
+          }
         }
       } else {
         // Individual class prices
@@ -90,13 +108,13 @@ export function CheckoutButton({
             price: course.price
           };
         });
-      }
 
-      if (includeReattunement) {
-        selectedItems.push({
-          name: reattunement.title,
-          price: reattunement.price
-        });
+        if (includeReattunement) {
+          selectedItems.push({
+            name: reattunement.title,
+            price: reattunement.price
+          });
+        }
       }
 
       const response = await fetch('/api/create-checkout', {
@@ -135,6 +153,14 @@ export function CheckoutButton({
       setIsLoading(false);
     }
   };
+
+  // Debug logs
+  console.log('Render state:', {
+    selectedCourses,
+    totalCourses: courses.length,
+    isBundle: selectedCourses.length === courses.length,
+    paymentOptions: getPaymentOptions()
+  });
 
   return (
     <div className="space-y-4">
