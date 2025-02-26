@@ -137,7 +137,7 @@ const CheckoutForm = ({
     <form onSubmit={handleSubmit}>
       <div className="space-y-3 sm:space-y-4 mt-4 sm:mt-6">
         {/* Contact Information */}
-        <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+        <div className="space-y-2 sm:space-y-4 mb-3 sm:mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Full Name
@@ -248,8 +248,8 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
       <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="w-full max-w-lg rounded-lg bg-white p-4 sm:p-6 shadow-xl">
+      <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
+        <Dialog.Panel className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-3 sm:p-6 shadow-xl">
           <div className="flex justify-between items-center">
             <Dialog.Title className="text-lg sm:text-xl font-semibold text-gray-900">
               Checkout
@@ -266,7 +266,7 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
             </button>
           </div>
 
-          <div className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
+          <div className="mt-3 sm:mt-6 space-y-3 sm:space-y-5">
             {/* First Payment */}
             <div className="flex justify-between items-center border-b pb-4">
               <div>
@@ -281,13 +281,13 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
             </div>
 
             {/* Selected Items */}
-            <div className="space-y-3 sm:space-y-4">
+            <div className="space-y-2 sm:space-y-3">
               <h3 className="text-base sm:text-lg font-medium">Selected Items:</h3>
               {items.map((item, index) => (
-                <div key={index} className="space-y-1">
-                  <p>{item.name}</p>
+                <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                  <p className="text-sm sm:text-base">{item.name}</p>
                   <p className="text-sm text-gray-600">
-                    Price: ${(item.price / 100).toFixed(2)}
+                    ${(item.price / 100).toFixed(2)}
                   </p>
                 </div>
               ))}
@@ -295,19 +295,15 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
 
             {/* Payment Schedule - Only show for split payments */}
             {payments > 1 && (
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <h3 className="text-base sm:text-lg font-medium">Payment Schedule</h3>
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span>Today</span>
-                    <span>${splitAmountFormatted}</span>
-                  </div>
-                  {getMonthlyPaymentDates(payments).map((date) => (
-                    <div key={date} className="flex justify-between items-center">
-                      <span>{date}</span>
-                      <span>${splitAmountFormatted}</span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
+                  <div className="font-medium">Today</div>
+                  <div className="text-right">${splitAmountFormatted}</div>
+                  {getMonthlyPaymentDates(payments).flatMap((date, index) => [
+                    <div key={`date-${index}`}>{date}</div>,
+                    <div key={`amount-${index}`} className="text-right">${splitAmountFormatted}</div>
+                  ])}
                 </div>
               </div>
             )}
