@@ -93,6 +93,36 @@ const CheckoutForm = ({
         throw new Error(result.error.message || 'Payment failed');
       }
 
+      // For split payments, set up subscription for future payments
+      if (payments > 1) {
+        try {
+          console.log('Setting up subscription for future payments');
+          
+          // Create a subscription
+          const subscriptionResponse = await fetch('/api/create-subscription', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentMethodId: result.paymentIntent.payment_method,
+              paymentIntentId: result.paymentIntent.id,
+              customerInfo: contactInfo,
+              items: items,
+              splitAmount: splitAmount,
+              totalPayments: payments
+            })
+          });
+
+          if (!subscriptionResponse.ok) {
+            console.warn('Failed to set up future payments, but initial payment succeeded');
+          } else {
+            console.log('Future payments scheduled successfully');
+          }
+        } catch (error) {
+          console.error('Error setting up subscription:', error);
+          // Continue to success page even if subscription setup fails
+        }
+      }
+
       // Payment successful
       window.location.href = `/success?payment_intent=${result.paymentIntent.id}&payment_intent_client_secret=${clientSecret}`;
     } catch (error) {
