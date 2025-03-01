@@ -25,6 +25,7 @@ const CheckoutForm = ({
   onClose,
   isLoading,
   setIsLoading,
+  setProcessingStep,
   items
 }: { 
   splitAmount: number;
@@ -33,6 +34,7 @@ const CheckoutForm = ({
   onClose: () => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  setProcessingStep: (step: number) => void;
   items: { name: string; price: number; }[];
 }) => {
   const stripe = useStripe();
@@ -51,6 +53,7 @@ const CheckoutForm = ({
 
     setError(null);
     setIsLoading(true);
+    setProcessingStep(0); // Start with the first step
     
     try {
       // Create payment intent
@@ -75,6 +78,7 @@ const CheckoutForm = ({
       }
 
       const { clientSecret } = await response.json();
+      setProcessingStep(1); // Move to the next step
 
       // Confirm payment
       const result = await stripe.confirmCardPayment(clientSecret, {
@@ -92,7 +96,9 @@ const CheckoutForm = ({
       if (result.error) {
         throw new Error(result.error.message || 'Payment failed');
       }
-
+      
+      setProcessingStep(2); // Move to the next step
+      
       // For split payments, set up subscription for future payments
       if (payments > 1) {
         try {
@@ -124,6 +130,7 @@ const CheckoutForm = ({
       }
 
       // Payment successful
+      setProcessingStep(3); // Final step before redirect
       window.location.href = `/success?payment_intent=${result.paymentIntent.id}&payment_intent_client_secret=${clientSecret}`;
     } catch (error) {
       console.error('Error:', error);
@@ -145,9 +152,10 @@ const CheckoutForm = ({
             <input
               type="text"
               required
+              disabled={isLoading}
               value={contactInfo.fullName}
               onChange={e => setContactInfo(prev => ({...prev, fullName: e.target.value}))}
-              className="w-full rounded-md border border-gray-300 px-3 py-2"
+              className={`w-full rounded-md border border-gray-300 px-3 py-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
           </div>
           <div>
@@ -157,9 +165,10 @@ const CheckoutForm = ({
             <input
               type="email"
               required
+              disabled={isLoading}
               value={contactInfo.email}
               onChange={e => setContactInfo(prev => ({...prev, email: e.target.value}))}
-              className="w-full rounded-md border border-gray-300 px-3 py-2"
+              className={`w-full rounded-md border border-gray-300 px-3 py-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
           </div>
           <div>
@@ -169,9 +178,10 @@ const CheckoutForm = ({
             <input
               type="tel"
               required
+              disabled={isLoading}
               value={contactInfo.phone}
               onChange={e => setContactInfo(prev => ({...prev, phone: e.target.value}))}
-              className="w-full rounded-md border border-gray-300 px-3 py-2"
+              className={`w-full rounded-md border border-gray-300 px-3 py-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
           </div>
         </div>
@@ -206,8 +216,9 @@ const CheckoutForm = ({
       <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
         <button
           type="button"
-          onClick={onClose}
-          className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-800"
+          onClick={isLoading ? () => {} : onClose}
+          disabled={isLoading}
+          className={`w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-800 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           Cancel
         </button>
@@ -239,25 +250,52 @@ interface CheckoutModalProps {
 
 export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: CheckoutModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [processingStep, setProcessingStep] = useState(0);
   const { splitAmount, totalAmount, payments } = paymentSchedule;
   const splitAmountFormatted = (splitAmount / 100).toFixed(2);
   const totalAmountFormatted = (totalAmount / 100).toFixed(2);
+  
+  const processingSteps = [
+    "Preparing payment...",
+    "Connecting to payment processor...",
+    "Processing your payment...",
+    "Finalizing transaction..."
+  ];
 
   return (
     <Elements stripe={stripePromise}>
-      <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+      <Dialog 
+        open={isOpen} 
+        onClose={isLoading ? () => {} : onClose} 
+        className="relative z-50"
+      >
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
-        <Dialog.Panel className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-3 sm:p-6 shadow-xl">
+        <Dialog.Panel className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-3 sm:p-6 shadow-xl relative">
+          {/* Processing Overlay */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 rounded-lg">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary mb-4"></div>
+              <p className="text-lg font-medium text-gray-800">{processingSteps[processingStep]}</p>
+              <p className="text-sm text-gray-600 mt-2">Please don't close this window</p>
+              
+              <div className="flex items-center justify-center mt-4">
+                <div className="animate-bounce bg-primary rounded-full h-3 w-3 mr-1"></div>
+                <div className="animate-bounce bg-primary rounded-full h-3 w-3 mr-1" style={{animationDelay: '0.2s'}}></div>
+                <div className="animate-bounce bg-primary rounded-full h-3 w-3" style={{animationDelay: '0.4s'}}></div>
+              </div>
+            </div>
+          )}
           <div className="flex justify-between items-center">
             <Dialog.Title className="text-lg sm:text-xl font-semibold text-gray-900">
               Checkout
             </Dialog.Title>
             <button
               type="button"
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-500"
+              onClick={isLoading ? () => {} : onClose}
+              disabled={isLoading}
+              className={`text-gray-400 hover:text-gray-500 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="sr-only">Close</span>
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -323,6 +361,7 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
               onClose={onClose}
               isLoading={isLoading}
               setIsLoading={setIsLoading}
+              setProcessingStep={setProcessingStep}
               items={items}
             />
           </div>
