@@ -2,6 +2,9 @@ import { stripe } from '@/lib/stripe';
 import { REATTUNEMENT } from '@/config/courses';
 import Link from 'next/link';
 
+// Tell Next.js this is a dynamic page that should not be statically generated
+export const dynamic = 'force-dynamic';
+
 interface MetadataItem {
   name: string;
   price: number;
