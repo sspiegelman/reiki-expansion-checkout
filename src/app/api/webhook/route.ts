@@ -51,31 +51,50 @@ export async function POST(request: Request) {
 
         // Send to Make.com webhook
         try {
-          const makeResponse = await fetch(process.env.MAKE_WEBHOOK_URL!, {
+          // Check if MAKE_WEBHOOK_URL is set
+          if (!process.env.MAKE_WEBHOOK_URL) {
+            console.error('MAKE_WEBHOOK_URL is not set in environment variables');
+            return NextResponse.json({ error: 'Webhook URL not configured' }, { status: 500 });
+          }
+          
+          // Log the webhook URL (redacted for security)
+          const redactedUrl = process.env.MAKE_WEBHOOK_URL.replace(/\/[^\/]+$/, '/***');
+          console.log('Sending to Make.com webhook:', redactedUrl);
+          
+          // Parse items from metadata
+          const items = JSON.parse(metadata.items || '[]');
+          
+          // Prepare the payload for Make.com - keeping original values in cents
+          const makePayload = {
+            event: 'payment.succeeded',
+            timestamp: new Date().toISOString(),
+            customer: {
+              fullName: contactInfo.fullName,
+              firstName: firstName,
+              lastName: lastName,
+              email: contactInfo.email,
+              phone: contactInfo.phone
+            },
+            payment: {
+              id: paymentIntent.id,
+              amount: paymentIntent.amount, // Original amount in cents
+              currency: paymentIntent.currency,
+              status: 'succeeded',
+              paymentType: metadata.type,
+              paymentNumber: metadata.payment_number,
+              totalPayments: metadata.total_payments,
+              totalAmount: metadata.total_amount // Original total amount in cents
+            },
+            items: items // Original items with prices in cents
+          };
+
+          // Log the payload being sent to Make.com
+          console.log('Sending payload to Make.com:', JSON.stringify(makePayload, null, 2));
+
+          const makeResponse = await fetch(process.env.MAKE_WEBHOOK_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              event: 'payment.succeeded',
-              timestamp: new Date().toISOString(),
-              customer: {
-                fullName: contactInfo.fullName,
-                firstName: firstName,
-                lastName: lastName,
-                email: contactInfo.email,
-                phone: contactInfo.phone
-              },
-              payment: {
-                id: paymentIntent.id,
-                amount: paymentIntent.amount,
-                currency: paymentIntent.currency,
-                status: 'succeeded',
-                paymentType: metadata.type,
-                paymentNumber: metadata.payment_number,
-                totalPayments: metadata.total_payments,
-                totalAmount: metadata.total_amount
-              },
-              items: JSON.parse(metadata.items || '[]')
-            })
+            body: JSON.stringify(makePayload)
           });
 
           if (!makeResponse.ok) {
