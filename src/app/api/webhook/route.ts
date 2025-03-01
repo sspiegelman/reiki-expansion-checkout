@@ -100,49 +100,17 @@ export async function POST(request: Request) {
           error: paymentIntent.last_payment_error
         });
 
-        // Parse the full name into first and last name
-        const nameParts = contactInfo.fullName ? contactInfo.fullName.trim().split(/\s+/) : [];
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-
-        // Send failure to Make.com
-        try {
-          const makeResponse = await fetch(process.env.MAKE_WEBHOOK_URL!, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              event: 'payment.failed',
-              timestamp: new Date().toISOString(),
-              customer: {
-                fullName: contactInfo.fullName,
-                firstName: firstName,
-                lastName: lastName,
-                email: contactInfo.email,
-                phone: contactInfo.phone
-              },
-              payment: {
-                id: paymentIntent.id,
-                amount: paymentIntent.amount,
-                currency: paymentIntent.currency,
-                status: 'failed',
-                error: paymentIntent.last_payment_error?.message,
-                paymentType: metadata.type,
-                paymentNumber: metadata.payment_number,
-                totalPayments: metadata.total_payments,
-                totalAmount: metadata.total_amount
-              },
-              items: JSON.parse(metadata.items || '[]')
-            })
-          });
-
-          if (!makeResponse.ok) {
-            console.error('Make.com webhook failed:', await makeResponse.text());
-          } else {
-            console.log('Successfully sent failure to Make.com');
-          }
-        } catch (error) {
-          console.error('Error sending to Make.com:', error);
-        }
+        // Log payment failure details but don't send to Make.com
+        console.log('Payment failed details:', {
+          customer: contactInfo,
+          payment: {
+            id: paymentIntent.id,
+            amount: paymentIntent.amount,
+            currency: paymentIntent.currency,
+            error: paymentIntent.last_payment_error?.message
+          },
+          metadata
+        });
 
         return NextResponse.json({ success: true });
       }
