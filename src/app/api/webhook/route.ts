@@ -44,6 +44,11 @@ export async function POST(request: Request) {
         const contactInfo = JSON.parse(metadata.contact_info || '{}');
         console.log('Customer info:', contactInfo);
 
+        // Parse the full name into first and last name
+        const nameParts = contactInfo.fullName ? contactInfo.fullName.trim().split(/\s+/) : [];
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
         // Send to Make.com webhook
         try {
           const makeResponse = await fetch(process.env.MAKE_WEBHOOK_URL!, {
@@ -54,6 +59,8 @@ export async function POST(request: Request) {
               timestamp: new Date().toISOString(),
               customer: {
                 fullName: contactInfo.fullName,
+                firstName: firstName,
+                lastName: lastName,
                 email: contactInfo.email,
                 phone: contactInfo.phone
               },
@@ -93,6 +100,11 @@ export async function POST(request: Request) {
           error: paymentIntent.last_payment_error
         });
 
+        // Parse the full name into first and last name
+        const nameParts = contactInfo.fullName ? contactInfo.fullName.trim().split(/\s+/) : [];
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
         // Send failure to Make.com
         try {
           const makeResponse = await fetch(process.env.MAKE_WEBHOOK_URL!, {
@@ -103,6 +115,8 @@ export async function POST(request: Request) {
               timestamp: new Date().toISOString(),
               customer: {
                 fullName: contactInfo.fullName,
+                firstName: firstName,
+                lastName: lastName,
                 email: contactInfo.email,
                 phone: contactInfo.phone
               },
