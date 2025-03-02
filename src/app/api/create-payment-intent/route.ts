@@ -7,7 +7,7 @@ interface ContactInfo {
   fullName?: string;
   email?: string;
   phone?: string;
-  [key: string]: any;
+  [key: string]: string | undefined;
 }
 
 export async function POST(request: Request) {

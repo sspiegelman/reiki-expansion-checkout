@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
+import Stripe from 'stripe';
 
 // These interfaces are used in the function parameters
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
     });
 
     // 1. Get or create a customer
-    let customer;
+    let customer: Stripe.Customer | Stripe.DeletedCustomer;
     try {
       // First, try to get the customer from the payment intent
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
         
         console.log('Using existing customer from payment intent:', {
           id: customer.id,
-          email: (customer as any).email
+          email: !customer.deleted ? (customer as Stripe.Customer).email : undefined
         });
       } else {
         // Try to find an existing customer by email
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
           
           console.log('Created new customer for subscription:', {
             id: customer.id,
-            email: (customer as any).email
+            email: (customer as Stripe.Customer).email
           });
         }
       }
@@ -150,10 +151,12 @@ export async function POST(request: Request) {
           
           console.log('Created fallback customer:', {
             id: customer.id,
-            email: (customer as any).email
+            email: (customer as Stripe.Customer).email
           });
         }
-      } catch (secondError) {
+      } catch (error) {
+        // Log the second error
+        console.error('Second lookup attempt failed:', error);
         // If all else fails, create a new customer
         customer = await stripe.customers.create({
           name: customerInfo.fullName,
@@ -167,7 +170,7 @@ export async function POST(request: Request) {
         
         console.log('Created last-resort customer after all lookups failed:', {
           id: customer.id,
-          email: (customer as any).email
+          email: (customer as Stripe.Customer).email
         });
       }
     }

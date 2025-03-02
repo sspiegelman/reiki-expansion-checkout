@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 
+// Define the customer info interface
+interface CustomerInfo {
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+}
+
 export async function POST(request: Request) {
   try {
     // Get the raw request body as text (important for signature verification)
@@ -65,7 +74,7 @@ export async function POST(request: Request) {
         });
 
         // Get customer info - first try from Stripe customer, then fallback to metadata
-        let customerInfo = {};
+        let customerInfo: CustomerInfo = {};
         let firstName = '';
         let lastName = '';
         
@@ -83,11 +92,11 @@ export async function POST(request: Request) {
               lastName = nameParts.slice(1).join(' ') || '';
               
               customerInfo = {
-                fullName: customer.name,
+                fullName: customer.name || undefined,
                 firstName,
                 lastName,
-                email: customer.email,
-                phone: customer.phone
+                email: customer.email || undefined,
+                phone: customer.phone || undefined
               };
             }
           }
@@ -136,11 +145,11 @@ export async function POST(request: Request) {
             event: 'payment.succeeded',
             timestamp: new Date().toISOString(),
             customer: {
-              fullName: (customerInfo as any).fullName,
+              fullName: customerInfo.fullName || '',
               firstName: firstName,
               lastName: lastName,
-              email: (customerInfo as any).email,
-              phone: (customerInfo as any).phone
+              email: customerInfo.email || '',
+              phone: customerInfo.phone || ''
             },
             payment: {
               id: paymentIntent.id,
