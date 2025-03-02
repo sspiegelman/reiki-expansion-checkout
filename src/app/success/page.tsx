@@ -13,7 +13,7 @@ interface MetadataItem {
 export default async function SuccessPage({
   searchParams,
 }: {
-  searchParams: { payment_intent: string; payment_intent_client_secret: string };
+  searchParams: { payment_intent: string };
 }) {
   let paymentIntent;
   try {
@@ -22,6 +22,13 @@ export default async function SuccessPage({
         searchParams.payment_intent,
         { expand: ['payment_method'] }
       );
+      
+      // Add validation to ensure the payment was successful
+      if (paymentIntent.status !== 'succeeded') {
+        console.error('Payment not successful:', paymentIntent.status);
+        // You could redirect to an error page here if needed
+        // return redirect('/payment-error');
+      }
     }
   } catch (error) {
     console.error('Error fetching payment:', error);

@@ -131,7 +131,7 @@ const CheckoutForm = ({
 
       // Payment successful
       setProcessingStep(3); // Final step before redirect
-      window.location.href = `/success?payment_intent=${result.paymentIntent.id}&payment_intent_client_secret=${clientSecret}`;
+      window.location.href = `/success?payment_intent=${result.paymentIntent.id}`;
     } catch (error) {
       console.error('Error:', error);
       setError(error instanceof Error ? error.message : 'Payment failed. Please try again.');
