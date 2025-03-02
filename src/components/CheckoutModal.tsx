@@ -119,9 +119,17 @@ const CheckoutForm = ({
           });
 
           if (!subscriptionResponse.ok) {
-            console.warn('Failed to set up future payments, but initial payment succeeded');
+            // Get detailed error message
+            const errorData = await subscriptionResponse.json();
+            console.warn('Failed to set up future payments, but initial payment succeeded:', 
+              errorData.message || 'Unknown error');
+            
+            // We'll still continue to success page, but log detailed error
+            console.error('Subscription setup failed with status:', subscriptionResponse.status);
           } else {
-            console.log('Future payments scheduled successfully');
+            const subscriptionResult = await subscriptionResponse.json();
+            console.log('Future payments scheduled successfully:', subscriptionResult);
+            console.log('Next payment date:', subscriptionResult.next_payment_date);
           }
         } catch (error) {
           console.error('Error setting up subscription:', error);
