@@ -66,7 +66,12 @@ export async function POST(request: Request) {
         {
           price_data: {
             currency: 'usd',
-            product: 'prod_RqDP8e3zjOCneN', // The product ID you provided
+            product: process.env.STRIPE_SUBSCRIPTION_PRODUCT_ID || 
+              // Fallback: Create a product dynamically if no ID is provided
+              (await stripe.products.create({
+                name: 'Payment Plan - ' + new Date().toISOString(),
+                description: 'Installment payment plan'
+              })).id,
             unit_amount: splitAmount,
             recurring: {
               interval: 'month',
