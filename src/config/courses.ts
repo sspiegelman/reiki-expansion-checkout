@@ -38,12 +38,12 @@ export const COURSES: Course[] = [
   },
 ];
 
-export const BUNDLE_PRICE = 39500; // $395.00
+export const BUNDLE_PRICE = 200; // $2.00 (temporarily changed for testing)
 
 export const REATTUNEMENT: ReattunementOption = {
   id: 'reattunement',
-  title: 'Private Reiki Re-Attunement with Michal',
-  price: 9700, // $97.00
+  title: 'Private Reiki Re-Attunement with Michal [TEST]',
+  price: 100, // $1.00 (temporarily changed for testing)
 };
 
 export const COURSE_TITLE = 'Reiki Expansion & Reactivation';
