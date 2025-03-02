@@ -3,17 +3,17 @@ import { Course, ReattunementOption } from '@/types';
 export const COURSES: Course[] = [
   {
     id: 'class-1',
-    title: 'Class 1 - Chakra Alignment Technique for Self-Healing (March 18)',
+    title: 'Class 1 - Chakra Alignment Technique for Self-Healing (March 18) [TEST]',
     description: "You'll learn and practice a structured chakra balancing method for self-Reiki that starts from the feet and ends at the head.",
     date: 'March 18',
-    price: 9500, // $95.00
+    price: 100, // $1.00 (temporarily changed for testing)
   },
   {
     id: 'class-2',
-    title: 'Class 2 - Opening & Sealing Technique with Crystals (March 20)',
+    title: 'Class 2 - Opening & Sealing Technique with Crystals (March 20) [TEST]',
     description: "You'll learn and practice the opening & sealing technique, the Chakra Mapping Form, and crystals to expand your remote Reiki practice.",
     date: 'March 20',
-    price: 9500,
+    price: 100, // $1.00 (temporarily changed for testing)
   },
   {
     id: 'class-3',
