@@ -4,20 +4,43 @@ import { stripe } from '@/lib/stripe';
 
 export async function POST(request: Request) {
   try {
+    // Get the raw request body as text (important for signature verification)
     const body = await request.text();
+    
+    // Get the signature header
     const signature = request.headers.get('stripe-signature') as string;
+    
+    // Log key information for debugging
+    console.log('Webhook received:', {
+      signatureExists: !!signature,
+      signaturePrefix: signature ? signature.substring(0, 10) + '...' : 'missing',
+      bodyLength: body.length,
+      bodyPreview: body.substring(0, 50) + '...'
+    });
 
     let event: Stripe.Event;
 
     try {
+      // Verify the signature
+      const secret = process.env.STRIPE_WEBHOOK_SECRET!;
+      console.log('Using webhook secret:', secret.substring(0, 5) + '...');
+      
       event = stripe.webhooks.constructEvent(
         body,
         signature,
-        process.env.STRIPE_WEBHOOK_SECRET!
+        secret
       );
+      
+      console.log('Webhook signature verified successfully');
     } catch (err) {
       const error = err as Error;
-      console.error('Webhook signature verification failed:', error.message);
+      console.error('Webhook signature verification failed:', {
+        error: error.message,
+        secretFirstChars: process.env.STRIPE_WEBHOOK_SECRET 
+          ? process.env.STRIPE_WEBHOOK_SECRET.substring(0, 5) + '...' 
+          : 'missing'
+      });
+      
       return NextResponse.json(
         { error: 'Webhook signature verification failed' },
         { status: 400 }
@@ -26,7 +49,8 @@ export async function POST(request: Request) {
 
     console.log('Webhook event received:', {
       type: event.type,
-      id: event.id
+      id: event.id,
+      livemode: event.livemode
     });
 
     switch (event.type) {
@@ -40,14 +64,57 @@ export async function POST(request: Request) {
           metadata
         });
 
-        // Parse customer info
-        const contactInfo = JSON.parse(metadata.contact_info || '{}');
-        console.log('Customer info:', contactInfo);
-
-        // Parse the full name into first and last name
-        const nameParts = contactInfo.fullName ? contactInfo.fullName.trim().split(/\s+/) : [];
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
+        // Get customer info - first try from Stripe customer, then fallback to metadata
+        let customerInfo = {};
+        let firstName = '';
+        let lastName = '';
+        
+        try {
+          if (paymentIntent.customer) {
+            // Get customer details from Stripe
+            const customer = await stripe.customers.retrieve(paymentIntent.customer as string);
+            if (!customer.deleted) {
+              console.log('Retrieved customer from Stripe:', customer.id);
+              
+              // Use customer data from Stripe
+              const fullName = customer.name || '';
+              const nameParts = fullName.trim().split(/\s+/);
+              firstName = nameParts[0] || '';
+              lastName = nameParts.slice(1).join(' ') || '';
+              
+              customerInfo = {
+                fullName: customer.name,
+                firstName,
+                lastName,
+                email: customer.email,
+                phone: customer.phone
+              };
+            }
+          }
+        } catch (error) {
+          console.error('Error retrieving customer from Stripe:', error);
+        }
+        
+        // Fallback to metadata if needed
+        if (!Object.keys(customerInfo).length) {
+          const contactInfo = JSON.parse(metadata.contact_info || '{}');
+          console.log('Using customer info from metadata');
+          
+          // Parse the full name into first and last name
+          const nameParts = contactInfo.fullName ? contactInfo.fullName.trim().split(/\s+/) : [];
+          firstName = nameParts[0] || '';
+          lastName = nameParts.slice(1).join(' ') || '';
+          
+          customerInfo = {
+            fullName: contactInfo.fullName,
+            firstName,
+            lastName,
+            email: contactInfo.email,
+            phone: contactInfo.phone
+          };
+        }
+        
+        console.log('Customer info:', customerInfo);
 
         // Send to Make.com webhook
         try {
@@ -69,11 +136,11 @@ export async function POST(request: Request) {
             event: 'payment.succeeded',
             timestamp: new Date().toISOString(),
             customer: {
-              fullName: contactInfo.fullName,
+              fullName: (customerInfo as any).fullName,
               firstName: firstName,
               lastName: lastName,
-              email: contactInfo.email,
-              phone: contactInfo.phone
+              email: (customerInfo as any).email,
+              phone: (customerInfo as any).phone
             },
             payment: {
               id: paymentIntent.id,
@@ -131,6 +198,28 @@ export async function POST(request: Request) {
           metadata
         });
 
+        return NextResponse.json({ success: true });
+      }
+
+      case 'customer.created': {
+        const customer = event.data.object as Stripe.Customer;
+        console.log('Customer created:', {
+          customer_id: customer.id,
+          email: customer.email,
+          name: customer.name,
+          metadata: customer.metadata
+        });
+        return NextResponse.json({ success: true });
+      }
+
+      case 'customer.updated': {
+        const customer = event.data.object as Stripe.Customer;
+        console.log('Customer updated:', {
+          customer_id: customer.id,
+          email: customer.email,
+          name: customer.name,
+          metadata: customer.metadata
+        });
         return NextResponse.json({ success: true });
       }
 

@@ -35,21 +35,142 @@ export async function POST(request: Request) {
       totalPayments
     });
 
-    // 1. Create a customer
-    const customer = await stripe.customers.create({
-      name: customerInfo.fullName,
-      email: customerInfo.email,
-      phone: customerInfo.phone,
-      payment_method: paymentMethodId,
-      invoice_settings: {
-        default_payment_method: paymentMethodId,
-      },
-    });
-
-    console.log('Customer created:', {
-      id: customer.id,
-      email: customer.email
-    });
+    // 1. Get or create a customer
+    let customer;
+    try {
+      // First, try to get the customer from the payment intent
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.customer) {
+        // Use the customer from the payment intent
+        customer = await stripe.customers.retrieve(paymentIntent.customer as string);
+        
+        // Update the customer with the payment method if needed
+        if (paymentMethodId) {
+          await stripe.customers.update(customer.id, {
+            invoice_settings: {
+              default_payment_method: paymentMethodId,
+            },
+          });
+          
+          // Attach the payment method to the customer if it's not already
+          try {
+            await stripe.paymentMethods.attach(paymentMethodId, {
+              customer: customer.id,
+            });
+          } catch (error) {
+            // Payment method might already be attached, which is fine
+            console.log('Note: Payment method attachment error (may already be attached):', error);
+          }
+        }
+        
+        console.log('Using existing customer from payment intent:', {
+          id: customer.id,
+          email: (customer as any).email
+        });
+      } else {
+        // Try to find an existing customer by email
+        const existingCustomers = await stripe.customers.list({
+          email: customerInfo.email,
+          limit: 1
+        });
+        
+        if (existingCustomers.data.length > 0) {
+          // Use existing customer
+          customer = existingCustomers.data[0];
+          
+          // Update the customer with the payment method
+          if (paymentMethodId) {
+            await stripe.customers.update(customer.id, {
+              invoice_settings: {
+                default_payment_method: paymentMethodId,
+              },
+            });
+            
+            // Attach the payment method to the customer
+            try {
+              await stripe.paymentMethods.attach(paymentMethodId, {
+                customer: customer.id,
+              });
+            } catch (error) {
+              console.log('Note: Payment method attachment error (may already be attached):', error);
+            }
+          }
+          
+          console.log('Using existing customer found by email:', {
+            id: customer.id,
+            email: customer.email
+          });
+        } else {
+          // Create a new customer as last resort
+          customer = await stripe.customers.create({
+            name: customerInfo.fullName,
+            email: customerInfo.email,
+            phone: customerInfo.phone,
+            payment_method: paymentMethodId,
+            invoice_settings: {
+              default_payment_method: paymentMethodId,
+            },
+          });
+          
+          console.log('Created new customer for subscription:', {
+            id: customer.id,
+            email: (customer as any).email
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error retrieving/creating customer:', error);
+      
+      // Try to find an existing customer by email before creating a new one
+      try {
+        const existingCustomers = await stripe.customers.list({
+          email: customerInfo.email,
+          limit: 1
+        });
+        
+        if (existingCustomers.data.length > 0) {
+          // Use existing customer
+          customer = existingCustomers.data[0];
+          console.log('Using existing customer as fallback:', {
+            id: customer.id,
+            email: customer.email
+          });
+        } else {
+          // Create a new customer as last resort
+          customer = await stripe.customers.create({
+            name: customerInfo.fullName,
+            email: customerInfo.email,
+            phone: customerInfo.phone,
+            payment_method: paymentMethodId,
+            invoice_settings: {
+              default_payment_method: paymentMethodId,
+            },
+          });
+          
+          console.log('Created fallback customer:', {
+            id: customer.id,
+            email: (customer as any).email
+          });
+        }
+      } catch (secondError) {
+        // If all else fails, create a new customer
+        customer = await stripe.customers.create({
+          name: customerInfo.fullName,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+          payment_method: paymentMethodId,
+          invoice_settings: {
+            default_payment_method: paymentMethodId,
+          },
+        });
+        
+        console.log('Created last-resort customer after all lookups failed:', {
+          id: customer.id,
+          email: (customer as any).email
+        });
+      }
+    }
 
     // 2. Calculate dates for subscription
     const now = new Date();
