@@ -37,8 +37,8 @@ export function CourseList({
           Register for the Full 5-Part Experience
         </h2>
         <div className="mt-4 space-y-4">
-          <div className="flex items-start justify-between">
-            <div>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between">
+            <div className="mb-4 md:mb-0">
               <p className="text-lg text-gray-700">
                 Complete Reiki Expansion & Reactivation Course
               </p>

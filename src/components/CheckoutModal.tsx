@@ -221,22 +221,46 @@ const CheckoutForm = ({
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
-        <button
-          type="button"
-          onClick={isLoading ? () => {} : onClose}
-          disabled={isLoading}
-          className={`w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-800 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isLoading || !stripe}
-          className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md disabled:opacity-50"
-        >
-          {isLoading ? 'Processing...' : `Pay $${(splitAmount / 100).toFixed(2)}`}
-        </button>
+      <div className="mt-4 sm:mt-6">
+        {/* Desktop buttons - hidden on mobile */}
+        <div className="hidden sm:flex sm:flex-row sm:justify-end sm:gap-3">
+          <button
+            type="button"
+            onClick={isLoading ? () => {} : onClose}
+            disabled={isLoading}
+            className={`sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-800 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isLoading || !stripe}
+            className="sm:w-auto px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md disabled:opacity-50"
+          >
+            {isLoading ? 'Processing...' : `Pay $${(splitAmount / 100).toFixed(2)}`}
+          </button>
+        </div>
+        
+        {/* Mobile sticky footer - hidden on desktop */}
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200 shadow-lg z-50">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={isLoading ? () => {} : onClose}
+              disabled={isLoading}
+              className={`w-1/3 px-4 py-3 text-sm font-medium text-gray-700 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading || !stripe}
+              className="w-2/3 px-4 py-3 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md disabled:opacity-50"
+            >
+              {isLoading ? 'Processing...' : `Pay $${(splitAmount / 100).toFixed(2)}`}
+            </button>
+          </div>
+        </div>
       </div>
     </form>
   );
@@ -280,7 +304,7 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
-        <Dialog.Panel className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-3 sm:p-6 shadow-xl relative">
+        <Dialog.Panel className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-3 sm:p-6 pb-20 sm:pb-6 shadow-xl relative">
           {/* Processing Overlay */}
           {isLoading && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 rounded-lg">
