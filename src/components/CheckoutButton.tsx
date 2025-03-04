@@ -114,7 +114,7 @@ export function CheckoutButton({
   return (
     <>
       <div className="space-y-4">
-        {selectedCourses.length === courses.length && (
+        {selectedCourses.length > 0 && (
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">Payment Options:</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -171,13 +171,13 @@ export function CheckoutButton({
         onClose={handleCloseModal}
         items={getSelectedItems()}
         paymentSchedule={{
-          splitAmount: selectedCourses.length === courses.length && paymentOption !== 'full'
+          splitAmount: paymentOption !== 'full'
             ? paymentOption === 'split-2'
               ? Math.round(getSelectedItems().reduce((sum, item) => sum + item.price, 0) / 2)
               : Math.round(getSelectedItems().reduce((sum, item) => sum + item.price, 0) / 3)
             : getSelectedItems().reduce((sum, item) => sum + item.price, 0),
           totalAmount: getSelectedItems().reduce((sum, item) => sum + item.price, 0),
-          payments: selectedCourses.length === courses.length && paymentOption !== 'full'
+          payments: paymentOption !== 'full'
             ? paymentOption === 'split-2' ? 2 : 3
             : 1
         }}
