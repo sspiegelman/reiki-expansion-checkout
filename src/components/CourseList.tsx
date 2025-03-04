@@ -29,7 +29,7 @@ export function CourseList({
       <div 
         className={`bg-white rounded-xl p-6 border-2 transition-colors ${
           selectedCourses.length === courses.length 
-            ? 'border-primary bg-primary/5 shadow-lg' 
+            ? 'border-green-600 bg-green-50 shadow-lg' 
             : 'border-gray-200 hover:border-primary/30'
         }`}
       >
@@ -95,7 +95,7 @@ export function CourseList({
         >
           <div>
             <h2 className="text-xl font-medium text-gray-900">
-              Individual Classes
+              Or Select Individual Classes
             </h2>
             <p className="text-sm text-gray-600 mt-1">
               Select one or more classes
@@ -129,8 +129,8 @@ export function CourseList({
                 }}
                 className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                   selectedCourses.includes(course.id)
-                    ? 'border-primary bg-primary/5'
-                    : 'border-gray-200 hover:border-primary/30'
+                    ? 'border-green-600 bg-green-50'
+                    : 'border-gray-200 hover:border-green-300'
                 }`}
               >
                 <div className="flex items-start space-x-4">
@@ -138,7 +138,7 @@ export function CourseList({
                     type="checkbox"
                     checked={selectedCourses.includes(course.id)}
                     onChange={() => {}} // Handled by parent div click
-                    className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
                   />
                   <div>
                     <h3 className="font-medium text-gray-900">{course.title}</h3>
@@ -158,7 +158,7 @@ export function CourseList({
         onClick={onToggleReattunement}
         className={`bg-white rounded-xl p-6 border transition-colors cursor-pointer ${
           includeReattunement
-            ? 'border-primary bg-primary/5'
+            ? 'border-green-600 bg-green-50'
             : 'border-gray-200 hover:border-primary/30'
         }`}
       >
@@ -174,7 +174,7 @@ export function CourseList({
             checked={includeReattunement}
             onChange={onToggleReattunement}
             onClick={(e) => e.stopPropagation()}
-            className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary disabled:opacity-50"
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 disabled:opacity-50"
           />
           <div>
             <h3 className="font-medium text-gray-900">{reattunement.title}</h3>
