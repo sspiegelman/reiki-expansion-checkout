@@ -33,18 +33,38 @@ export function CourseList({
             : 'border-gray-200 hover:border-primary/30'
         }`}
       >
-        <h2 className="text-2xl font-semibold text-gray-900">
-          Register for the Full 5-Part Experience
-        </h2>
+        <div className="flex justify-between items-start">
+          <h2 className="text-2xl font-semibold text-gray-900">
+            Register for the Full 5-Part Experience
+          </h2>
+          
+          {/* Savings badge */}
+          <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            Save $80
+          </div>
+        </div>
+        
         <div className="mt-4 space-y-4">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between">
             <div className="mb-4 md:mb-0">
               <p className="text-lg text-gray-700">
                 Complete Reiki Expansion & Reactivation Course
               </p>
-              <p className="text-primary font-medium mt-1">
-                Full Course Price: ${(BUNDLE_PRICE / 100).toFixed(2)} (Save $80)
-              </p>
+              
+              {/* Enhanced price comparison */}
+              <div className="mt-2 flex items-center">
+                <p className="text-primary font-medium">
+                  Bundle Price: ${(BUNDLE_PRICE / 100).toFixed(2)}
+                </p>
+                <div className="mx-2 text-gray-400">|</div>
+                <p className="text-gray-500 line-through">
+                  Individual: ${((courses.length * 9500) / 100).toFixed(2)}
+                </p>
+              </div>
+              
               <p className="text-sm text-gray-600 mt-2">
                 Get access to all 5 classes at our best value
               </p>

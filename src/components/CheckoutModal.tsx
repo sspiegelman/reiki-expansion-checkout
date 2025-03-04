@@ -2,6 +2,7 @@ import { Dialog } from '@headlessui/react';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useState } from 'react';
+import { TrustIndicators } from './TrustIndicators';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY!);
 
@@ -304,7 +305,7 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
-        <Dialog.Panel className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-3 sm:p-6 pb-20 sm:pb-6 shadow-xl relative">
+        <Dialog.Panel className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-3 sm:p-6 pb-28 sm:pb-6 shadow-xl relative">
           {/* Processing Overlay */}
           {isLoading && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 rounded-lg">
@@ -396,6 +397,8 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
               setProcessingStep={setProcessingStep}
               items={items}
             />
+            
+            <TrustIndicators />
           </div>
         </Dialog.Panel>
       </div>

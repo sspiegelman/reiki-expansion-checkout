@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Course, ReattunementOption, PaymentOption, PaymentDetails } from '@/types';
 import { BUNDLE_PRICE } from '@/config/courses';
 import { CheckoutModal } from './CheckoutModal';
+import { PaymentMethods } from './PaymentMethods';
 
 interface CheckoutButtonProps {
   selectedCourses: string[];
@@ -147,6 +148,9 @@ export function CheckoutButton({
             >
               Proceed to Checkout
             </button>
+            
+            {/* Add payment methods here */}
+            {!disabled && <PaymentMethods />}
           </div>
           
           {/* Order Summary */}
