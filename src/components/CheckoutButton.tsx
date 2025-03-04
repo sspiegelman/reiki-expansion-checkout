@@ -136,7 +136,7 @@ export function CheckoutButton({
         )}
 
         <div className="flex items-center gap-6">
-          <div className="flex-1">
+          <div className="w-full">
             <button
               onClick={handleCheckout}
               disabled={disabled}
@@ -146,22 +146,14 @@ export function CheckoutButton({
                   : 'bg-primary hover:bg-primary/90'
               }`}
             >
-              Proceed to Checkout
+              <span>Proceed to Checkout</span>
+              <span className="ml-1">•</span>
+              <span className="ml-1 font-bold">${(getSelectedItems().reduce((sum, item) => sum + item.price, 0) / 100).toFixed(2)}</span>
             </button>
             
             {/* Add payment methods here */}
             {!disabled && <PaymentMethods />}
           </div>
-          
-          {/* Order Summary */}
-          {!disabled && (
-            <div className="text-right">
-              <div className="text-sm text-gray-600">Total Order:</div>
-              <div className="font-semibold text-lg">
-                ${(getSelectedItems().reduce((sum, item) => sum + item.price, 0) / 100).toFixed(2)}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
