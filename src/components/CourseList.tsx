@@ -24,17 +24,7 @@ export function CourseList({
   // State to control whether individual classes are shown
   const [showClasses, setShowClasses] = useState(false);
 
-  // Helper function to get a shortened version of the course title
-  const getShortenedTitle = (title: string) => {
-    // Extract the part after the dash and before the date in parentheses
-    const parts = title.split('-');
-    if (parts.length > 1) {
-      const mainTitle = parts[1].trim();
-      const withoutDate = mainTitle.split('(')[0].trim();
-      return withoutDate;
-    }
-    return title;
-  };
+  // No longer needed since we're using the full title
 
   return (
     <div className="space-y-8">
@@ -128,7 +118,7 @@ export function CourseList({
         {/* Classes only shown when expanded */}
         {showClasses && (
           <div className="mt-6 border-t pt-4 space-y-4">
-            {courses.map((course, index) => (
+            {courses.map((course) => (
               <div 
                 key={course.id}
                 onClick={() => onSelectCourse(course.id)}
