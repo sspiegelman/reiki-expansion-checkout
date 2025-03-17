@@ -35,7 +35,7 @@ export default function Class5Page() {
   // Redirect if after course
   useEffect(() => {
     if (isAfterCourse()) {
-      router.push('/checkout/recordings');
+      router.push('/checkout/closed');
     }
   }, [router]);
   

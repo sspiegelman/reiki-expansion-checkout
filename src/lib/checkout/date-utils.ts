@@ -70,8 +70,8 @@ export function getNextClassPage(): string {
   const currentIndex = getCurrentClassIndex();
   
   if (currentIndex === -1) {
-    // After all classes, go to recordings
-    return '/checkout/recordings';
+    // After all classes, go to closed page
+    return '/checkout/closed';
   }
   
   return `/checkout/live/class-${currentIndex + 1}`;

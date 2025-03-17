@@ -5,7 +5,7 @@ import { isBeforeCourse, isDuringCourse } from '@/lib/checkout/date-utils';
  * Main checkout page that redirects users based on the current date
  * - Before March 18: Redirect to /checkout/full
  * - March 18 - April 1: Redirect to /checkout/live
- * - After April 1: Redirect to /checkout/recordings
+ * - After April 1: Redirect to /checkout/closed
  */
 export default function CheckoutPage() {
   if (isBeforeCourse()) {
@@ -13,7 +13,7 @@ export default function CheckoutPage() {
   } else if (isDuringCourse()) {
     redirect('/checkout/live');
   } else {
-    redirect('/checkout/recordings');
+    redirect('/checkout/closed');
   }
   
   // This will never be rendered, but is required for TypeScript

@@ -5,7 +5,7 @@ import { COURSE_TITLE, COURSE_SUBTITLE } from '@/config/courses';
  * After course page that informs visitors the course has concluded
  * Shown after April 1
  */
-export default function RecordingsPage() {
+export default function ClosedPage() {
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto text-center">
@@ -24,22 +24,6 @@ export default function RecordingsPage() {
             Thank you for your interest in the {COURSE_TITLE} {COURSE_SUBTITLE}. 
             This five-part immersive course ran from March 18 to April 1, 2025 and is no longer available for registration.
           </p>
-
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Interested in future courses?</h2>
-            <p className="text-gray-600 mb-4">
-              Join our mailing list to be notified when new courses become available.
-            </p>
-            
-            <div className="mt-4">
-              <a 
-                href="https://beaconsofchange.com/subscribe" 
-                className="inline-block bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg"
-              >
-                Subscribe to Updates
-              </a>
-            </div>
-          </div>
 
           <div className="mt-8">
             <Link
