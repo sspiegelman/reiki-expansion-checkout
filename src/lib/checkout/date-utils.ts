@@ -3,16 +3,18 @@
  */
 import { COURSES } from '@/config/courses';
 
-// Define dates in a timezone-safe way
+// Define dates in UTC for consistent timezone handling across server and client
+// All times are converted from Eastern Time (ET) to UTC
+// During EDT (Mar-Nov): ET+4=UTC, During EST (Nov-Mar): ET+5=UTC
 export const COURSE_DATES = {
-  START_DATE: new Date('2025-03-18T00:00:00.000-04:00'), // Eastern Time
-  END_DATE: new Date('2025-04-01T23:59:59.000-04:00'), // Eastern Time
+  START_DATE: new Date('2025-03-18T04:00:00.000Z'), // Midnight Eastern = 4am UTC
+  END_DATE: new Date('2025-04-02T03:59:59.000Z'),   // 11:59:59pm Eastern = 3:59:59am UTC
   CLASS_DATES: [
-    new Date('2025-03-18T00:00:00.000-04:00'), // Class 1 - Eastern Time
-    new Date('2025-03-20T00:00:00.000-04:00'), // Class 2 - Eastern Time
-    new Date('2025-03-25T00:00:00.000-04:00'), // Class 3 - Eastern Time
-    new Date('2025-03-27T00:00:00.000-04:00'), // Class 4 - Eastern Time
-    new Date('2025-04-01T00:00:00.000-04:00'), // Class 5 - Eastern Time
+    new Date('2025-03-18T04:00:00.000Z'), // Class 1 - UTC (Midnight Eastern)
+    new Date('2025-03-20T04:00:00.000Z'), // Class 2 - UTC (Midnight Eastern)
+    new Date('2025-03-25T04:00:00.000Z'), // Class 3 - UTC (Midnight Eastern)
+    new Date('2025-03-27T04:00:00.000Z'), // Class 4 - UTC (Midnight Eastern)
+    new Date('2025-04-01T04:00:00.000Z'), // Class 5 - UTC (Midnight Eastern)
   ]
 };
 
@@ -189,11 +191,12 @@ export function isClassPast(classIndex: number): boolean {
 }
 
 /**
- * Helper function to get the date string in YYYY-MM-DD format
+ * Helper function to get the date string in YYYY-MM-DD format using UTC
  * This normalizes dates to compare them without time or timezone issues
+ * Using UTC ensures consistent behavior between server and client
  */
 function getDateString(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
 }
 
 /**

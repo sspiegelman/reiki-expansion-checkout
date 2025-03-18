@@ -24,7 +24,11 @@ interface ServerTimeResponse {
     offset: number;
     offsetHours: number;
   };
-  dateString: string;
+  dateStrings: {
+    utcDateString: string;
+    localDateString: string;
+    note: string;
+  };
   dateChecks: {
     isBeforeCourse: boolean;
     isDuringCourse: boolean;
@@ -199,7 +203,9 @@ export default function Home() {
               <h4 className="font-bold">Client Time:</h4>
               <p>Raw: {new Date().toString()}</p>
               <p>ISO: {new Date().toISOString()}</p>
-              <p>Date String: {`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`}</p>
+              <p className="font-semibold mt-1">Date Strings:</p>
+              <p>UTC Date String: {`${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, '0')}-${String(new Date().getUTCDate()).padStart(2, '0')}`} <span className="text-green-600 font-semibold">(used for comparisons)</span></p>
+              <p>Local Date String: {`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`}</p>
               
               <h4 className="font-bold mt-2">Date Checks (Client):</h4>
               <p>isBeforeCourse: {String(beforeCourse)}</p>
@@ -214,7 +220,9 @@ export default function Home() {
                   <p>ISO: {serverTime.isoTime}</p>
                   <p>UTC: {serverTime.utcTime}</p>
                   <p>Local (ET): {serverTime.localTime}</p>
-                  <p>Date String: {serverTime.dateString}</p>
+                  <p className="font-semibold mt-1">Date Strings (used for comparison):</p>
+                  <p>UTC Date String: {serverTime.dateStrings.utcDateString} <span className="text-green-600 font-semibold">(used for comparisons)</span></p>
+                  <p>Local Date String: {serverTime.dateStrings.localDateString}</p>
                   <p>Timezone Offset: {serverTime.timezone.offsetHours} hours</p>
                   
                   <h4 className="font-bold mt-2">Date Checks (Server):</h4>

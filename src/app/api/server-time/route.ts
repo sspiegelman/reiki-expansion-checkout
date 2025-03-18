@@ -3,6 +3,16 @@ import { isBeforeCourse, isDuringCourse, isAfterCourse, getCurrentClassIndex } f
 export async function GET() {
   const now = new Date();
   
+  // Helper function to get UTC date string (same as in date-utils.ts)
+  const getUTCDateString = (date: Date): string => {
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+  };
+  
+  // Helper function to get local date string
+  const getLocalDateString = (date: Date): string => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+  
   return Response.json({
     rawTime: now.toString(),
     isoTime: now.toISOString(),
@@ -13,7 +23,11 @@ export async function GET() {
       offset: now.getTimezoneOffset(),
       offsetHours: now.getTimezoneOffset() / -60,
     },
-    dateString: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`,
+    dateStrings: {
+      utcDateString: getUTCDateString(now), // This is what's used for comparisons
+      localDateString: getLocalDateString(now),
+      note: "UTC date string is used for all date comparisons"
+    },
     dateChecks: {
       isBeforeCourse: isBeforeCourse(),
       isDuringCourse: isDuringCourse(),
