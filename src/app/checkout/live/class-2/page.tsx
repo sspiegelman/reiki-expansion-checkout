@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { COURSES, BUNDLE_PRICE, REATTUNEMENT, COURSE_TITLE, COURSE_SUBTITLE, COURSE_DESCRIPTION } from '@/config/courses';
+import { COURSES, REATTUNEMENT } from '@/config/courses';
 import { 
   isClassPast, 
   isClassToday,

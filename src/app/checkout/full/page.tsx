@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { COURSES, BUNDLE_PRICE, REATTUNEMENT, COURSE_TITLE, COURSE_SUBTITLE, COURSE_DESCRIPTION } from '@/config/courses';
 import { CourseList } from '@/components/CourseList';
 import { CheckoutButton } from '@/components/CheckoutButton';
@@ -11,7 +10,6 @@ import { CheckoutButton } from '@/components/CheckoutButton';
  * Shown before March 18
  */
 export default function FullCheckoutPage() {
-  const router = useRouter();
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [includeReattunement, setIncludeReattunement] = useState(false);
   const [paymentOption, setPaymentOption] = useState<'full' | 'split-2' | 'split-3'>('full');
