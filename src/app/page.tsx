@@ -193,7 +193,7 @@ export default function Home() {
         <div className="mt-16 border-t pt-4">
           <button 
             onClick={() => setShowDebug(!showDebug)}
-            className="text-xs text-gray-500 hover:text-gray-700"
+            className="text-xs text-gray-300 hover:text-gray-500"
           >
             {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
           </button>
