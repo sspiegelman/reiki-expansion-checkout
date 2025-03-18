@@ -135,3 +135,22 @@ export function isClassTomorrow(classIndex: number): boolean {
   
   return tomorrowString === classDateString;
 }
+
+/**
+ * Calculates the number of days until the course starts
+ * Returns 0 if the course has already started
+ */
+export function getDaysUntilCourseStart(): number {
+  const now = new Date();
+  
+  // If course has already started, return 0
+  if (now >= COURSE_DATES.START_DATE) {
+    return 0;
+  }
+  
+  // Calculate days difference
+  const diffTime = COURSE_DATES.START_DATE.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { COURSES, REATTUNEMENT, COURSE_TITLE, COURSE_SUBTITLE, COURSE_DESCRIPTION } from '@/config/courses';
+import { getDaysUntilCourseStart } from '@/lib/checkout/date-utils';
 import { CourseList } from '@/components/CourseList';
 import { CheckoutButton } from '@/components/CheckoutButton';
 
@@ -29,10 +30,8 @@ export default function FullCheckoutPage() {
     }
   };
 
-  // Calculate days until course starts
-  const daysUntilStart = Math.max(0, Math.ceil(
-    (new Date('2025-03-18').getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-  ));
+  // Get days until course starts using the timezone-safe utility function
+  const daysUntilStart = getDaysUntilCourseStart();
 
   return (
     <main className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -48,11 +47,14 @@ export default function FullCheckoutPage() {
             {COURSE_DESCRIPTION}
           </p>
           
-          {/* Countdown timer */}
+          {/* Countdown timer - Informational Style */}
           {daysUntilStart > 0 && (
-            <div className="mt-6 inline-block bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
-              <p className="text-amber-800 font-medium">
-                Course starts in {daysUntilStart} {daysUntilStart === 1 ? 'day' : 'days'}!
+            <div className="mt-6 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+              <p className="text-blue-700 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Course begins in {daysUntilStart} {daysUntilStart === 1 ? 'day' : 'days'}
               </p>
             </div>
           )}
