@@ -4,11 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { COURSES, REATTUNEMENT } from '@/config/courses';
 import { 
-  isClassPast, 
   isClassToday,
   isClassTomorrow,
-  getCurrentClassIndex, 
-  getNextClassPage,
   isAfterCourse
 } from '@/lib/checkout/date-utils';
 import { 
@@ -25,7 +22,6 @@ import { CheckoutButton } from '@/components/CheckoutButton';
 export default function Class5Page() {
   const router = useRouter();
   const classIndex = 4; // This is class-5
-  const currentClassIndex = getCurrentClassIndex();
   
   // State for checkout
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);

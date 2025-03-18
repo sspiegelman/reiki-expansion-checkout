@@ -2,8 +2,8 @@
  * Utility functions for course-related checkout page logic
  */
 
-import { COURSES, BUNDLE_PRICE } from '@/config/courses';
-import { isClassPast, isClassToday, isClassTomorrow, isAfterCourse } from './date-utils';
+import { COURSES } from '@/config/courses';
+import { isClassPast, isClassToday, isClassTomorrow } from './date-utils';
 
 // Price for recordings after the class has passed
 export const RECORDING_PRICE = 7500; // $75.00

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { COURSES, BUNDLE_PRICE, REATTUNEMENT, COURSE_TITLE, COURSE_SUBTITLE, COURSE_DESCRIPTION } from '@/config/courses';
+import { COURSES, REATTUNEMENT, COURSE_TITLE, COURSE_SUBTITLE, COURSE_DESCRIPTION } from '@/config/courses';
 import { CourseList } from '@/components/CourseList';
 import { CheckoutButton } from '@/components/CheckoutButton';
 
