@@ -3,7 +3,7 @@
  */
 
 import { COURSES, BUNDLE_PRICE } from '@/config/courses';
-import { isClassPast, isClassToday, isAfterCourse } from './date-utils';
+import { isClassPast, isClassToday, isClassTomorrow, isAfterCourse } from './date-utils';
 
 // Price for recordings after the class has passed
 export const RECORDING_PRICE = 7500; // $75.00
@@ -18,9 +18,9 @@ export function getClassPrice(classIndex: number): number {
 }
 
 /**
- * Gets the status of a class: 'upcoming', 'live-today', or 'past'
+ * Gets the status of a class: 'live-on-date', 'live-tomorrow', 'live-today', or 'past'
  */
-export function getClassStatus(classIndex: number): 'upcoming' | 'live-today' | 'past' {
+export function getClassStatus(classIndex: number): 'live-on-date' | 'live-tomorrow' | 'live-today' | 'past' {
   if (isClassPast(classIndex)) {
     return 'past';
   }
@@ -29,7 +29,11 @@ export function getClassStatus(classIndex: number): 'upcoming' | 'live-today' | 
     return 'live-today';
   }
   
-  return 'upcoming';
+  if (isClassTomorrow(classIndex)) {
+    return 'live-tomorrow';
+  }
+  
+  return 'live-on-date';
 }
 
 /**
@@ -39,8 +43,10 @@ export function getClassLabel(classIndex: number): string {
   const status = getClassStatus(classIndex);
   
   switch (status) {
-    case 'upcoming':
+    case 'live-on-date':
       return 'Join Live';
+    case 'live-tomorrow':
+      return 'Join Live Tomorrow!';
     case 'live-today':
       return 'Join Live Today!';
     case 'past':

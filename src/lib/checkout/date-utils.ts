@@ -1,16 +1,18 @@
 /**
  * Utility functions for date-based checkout page logic
  */
+import { COURSES } from '@/config/courses';
 
+// Define dates in a timezone-safe way
 export const COURSE_DATES = {
-  START_DATE: new Date('2025-03-18'),
-  END_DATE: new Date('2025-04-01'),
+  START_DATE: new Date('2025-03-18T00:00:00.000-04:00'), // Eastern Time
+  END_DATE: new Date('2025-04-01T23:59:59.000-04:00'), // Eastern Time
   CLASS_DATES: [
-    new Date('2025-03-18'), // Class 1
-    new Date('2025-03-20'), // Class 2
-    new Date('2025-03-25'), // Class 3
-    new Date('2025-03-27'), // Class 4
-    new Date('2025-04-01'), // Class 5
+    new Date('2025-03-18T00:00:00.000-04:00'), // Class 1 - Eastern Time
+    new Date('2025-03-20T00:00:00.000-04:00'), // Class 2 - Eastern Time
+    new Date('2025-03-25T00:00:00.000-04:00'), // Class 3 - Eastern Time
+    new Date('2025-03-27T00:00:00.000-04:00'), // Class 4 - Eastern Time
+    new Date('2025-04-01T00:00:00.000-04:00'), // Class 5 - Eastern Time
   ]
 };
 
@@ -85,13 +87,51 @@ export function isClassPast(classIndex: number): boolean {
 }
 
 /**
+ * Helper function to get the date string in YYYY-MM-DD format
+ * This normalizes dates to compare them without time or timezone issues
+ */
+function getDateString(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Helper function to create a date from a month-day string with the current year
+ */
+function createDateFromMonthDay(monthDayString: string): Date {
+  const currentYear = new Date().getFullYear();
+  return new Date(`${monthDayString}, ${currentYear}`);
+}
+
+/**
  * Checks if a specific class is happening today
  */
 export function isClassToday(classIndex: number): boolean {
+  // Get today's date string in Eastern Time
   const now = new Date();
-  const classDate = COURSE_DATES.CLASS_DATES[classIndex];
+  const todayString = getDateString(now);
   
-  return now.getDate() === classDate.getDate() && 
-         now.getMonth() === classDate.getMonth() && 
-         now.getFullYear() === classDate.getFullYear();
+  // Get class date string with current year
+  const classDateStr = COURSES[classIndex].date;
+  const classDate = createDateFromMonthDay(classDateStr);
+  const classDateString = getDateString(classDate);
+  
+  return todayString === classDateString;
+}
+
+/**
+ * Checks if a specific class is happening tomorrow
+ */
+export function isClassTomorrow(classIndex: number): boolean {
+  // Get current date and add one day
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const tomorrowString = getDateString(tomorrow);
+  
+  // Get class date string with current year
+  const classDateStr = COURSES[classIndex].date;
+  const classDate = createDateFromMonthDay(classDateStr);
+  const classDateString = getDateString(classDate);
+  
+  return tomorrowString === classDateString;
 }

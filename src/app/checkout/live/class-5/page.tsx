@@ -2,21 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { COURSES, BUNDLE_PRICE, REATTUNEMENT } from '@/config/courses';
+import { COURSES, BUNDLE_PRICE, REATTUNEMENT, COURSE_TITLE, COURSE_SUBTITLE, COURSE_DESCRIPTION } from '@/config/courses';
 import { 
   isClassPast, 
+  isClassToday,
+  isClassTomorrow,
   getCurrentClassIndex, 
   getNextClassPage,
-  isClassToday,
   isAfterCourse
 } from '@/lib/checkout/date-utils';
 import { 
-  getClassPrice, 
-  getClassStatus, 
-  getClassLabel
+  getClassStatus
 } from '@/lib/checkout/course-utils';
 import { ClassStatusBadge } from '@/components/checkout/ClassStatusBadge';
-import { CourseOfferCard } from '@/components/checkout/CourseOfferCard';
+import { RecordingsNote } from '@/components/checkout/RecordingsNote';
+import { CourseList } from '@/components/CourseList';
 import { CheckoutButton } from '@/components/CheckoutButton';
 
 /**
@@ -40,34 +40,72 @@ export default function Class5Page() {
   }, [router]);
   
   const classStatus = getClassStatus(classIndex);
-  const isCurrentClass = classIndex === currentClassIndex;
   
-  // Handle course selection
-  const handleCourseSelection = (courseId: string) => {
-    if (selectedCourses.includes(courseId)) {
-      setSelectedCourses(selectedCourses.filter(id => id !== courseId));
+  // Debug information
+  useEffect(() => {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    
+    // Create a proper date string with the current year
+    const currentYear = now.getFullYear();
+    const fullClassDateString = `${COURSES[classIndex].date}, ${currentYear}`;
+    const classDate = new Date(fullClassDateString);
+    
+    // Debug date strings
+    const todayString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const tomorrowString = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    const classDateString = `${classDate.getFullYear()}-${String(classDate.getMonth() + 1).padStart(2, '0')}-${String(classDate.getDate()).padStart(2, '0')}`;
+    
+    console.log('===== DEBUG INFO (Class 5) =====');
+    console.log('Current Date:', now.toString());
+    console.log('Today String:', todayString);
+    console.log('Tomorrow String:', tomorrowString);
+    console.log('Class Date:', COURSES[classIndex].date);
+    console.log('Class Date String:', classDateString);
+    console.log('Class Status:', classStatus);
+    console.log('Is Today:', isClassToday(classIndex) ? 'Yes' : 'No');
+    console.log('Is Tomorrow:', isClassTomorrow(classIndex) ? 'Yes' : 'No');
+    console.log('=====================');
+  }, [classIndex, classStatus]);
+  
+  const handleSelectionChange = (courses: string[], reattunement: boolean) => {
+    setSelectedCourses(courses);
+    setIncludeReattunement(reattunement);
+  };
+
+  const handleBundleSelection = (selected: boolean) => {
+    if (selected) {
+      // Select all courses at once with bundle price
+      setSelectedCourses(COURSES.map(course => course.id));
     } else {
-      setSelectedCourses([...selectedCourses, courseId]);
+      // Clear all selections
+      setSelectedCourses([]);
     }
   };
   
-  // Handle bundle selection
-  const handleBundleSelection = () => {
-    setSelectedCourses(COURSES.map(course => course.id));
-  };
-  
-  // Handle individual class selection
-  const handleClassSelection = () => {
-    setSelectedCourses([COURSES[classIndex].id]);
-  };
-  
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        {/* Page Header */}
         <div className="text-center mb-8">
+          {/* Prominent Status Banners */}
+          {classStatus === 'live-today' && (
+            <div className="bg-green-600 text-white py-3 px-4 rounded-lg mb-4 animate-pulse">
+              <p className="text-xl font-bold">Class 5 is live today!</p>
+            </div>
+          )}
+          {classStatus === 'live-tomorrow' && (
+            <div className="bg-yellow-600 text-white py-3 px-4 rounded-lg mb-4">
+              <p className="text-xl font-bold">Class 5 is live tomorrow!</p>
+            </div>
+          )}
+          {classStatus === 'live-on-date' && (
+            <div className="bg-blue-600 text-white py-3 px-4 rounded-lg mb-4">
+              <p className="text-xl font-bold">Class 5 is live on {COURSES[classIndex].date}!</p>
+            </div>
+          )}
+          
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-            {classStatus === 'live-today' ? 'Join Live Today: ' : ''}
             {COURSES[classIndex].title}
           </h1>
           
@@ -79,85 +117,52 @@ export default function Class5Page() {
           <p className="mt-4 text-lg text-gray-600">
             {COURSES[classIndex].description}
           </p>
+          
+          <RecordingsNote />
         </div>
-        
-        {/* Main content */}
-        <div className="mt-12 space-y-8">
-          {/* 1. Full Course Offer (Always Available) */}
-          <CourseOfferCard
-            title="Full Course Bundle"
-            description="Get all 5 classes for one discounted price. Includes live access and recordings."
-            price={BUNDLE_PRICE}
-            originalPrice={COURSES.reduce((sum, course) => sum + course.price, 0)}
-            ctaText="Get the Full Bundle"
-            highlight={true}
-            onClick={handleBundleSelection}
+
+        <div className="mt-12">
+          <CourseList
+            courses={COURSES}
+            reattunement={REATTUNEMENT}
+            selectedCourses={selectedCourses}
+            includeReattunement={includeReattunement}
+            onSelectCourse={(courseId) => {
+              // If course is already selected, remove it
+              if (selectedCourses.includes(courseId)) {
+                handleSelectionChange(
+                  selectedCourses.filter(id => id !== courseId),
+                  includeReattunement
+                );
+              } else {
+                // If course is not selected, add it
+                handleSelectionChange(
+                  [...selectedCourses, courseId],
+                  includeReattunement
+                );
+              }
+            }}
+            onBundleSelection={handleBundleSelection}
+            onToggleReattunement={() => {
+              handleSelectionChange(selectedCourses, !includeReattunement);
+            }}
           />
-          
-          {/* 2. Current Class Promotion */}
-          <CourseOfferCard
-            title={`${getClassLabel(classIndex)}: ${COURSES[classIndex].title}`}
-            description={COURSES[classIndex].description}
-            price={getClassPrice(classIndex)}
-            ctaText={classStatus === 'past' ? "Get Recording Access" : "Join Live Class"}
-            highlight={isCurrentClass}
-            onClick={handleClassSelection}
-          />
-          
-          {/* 4. All Classes List */}
           <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">All Available Classes</h2>
-            <div className="space-y-4">
-              {COURSES.map((course, idx) => (
-                <div key={course.id} className="flex justify-between items-center p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-medium">{course.title}</h3>
-                    <ClassStatusBadge status={getClassStatus(idx)} small />
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">${(getClassPrice(idx) / 100).toFixed(2)}</p>
-                    <button 
-                      className="text-sm text-primary hover:underline"
-                      onClick={() => router.push(`/checkout/live/class-${idx + 1}`)}
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <CheckoutButton
+              selectedCourses={selectedCourses}
+              includeReattunement={includeReattunement}
+              courses={COURSES}
+              reattunement={REATTUNEMENT}
+              disabled={selectedCourses.length === 0}
+              paymentOption={paymentOption}
+              onPaymentOptionChange={setPaymentOption}
+            />
           </div>
-          
-          {/* Checkout Button */}
-          {selectedCourses.length > 0 && (
-            <div className="mt-8 p-6 border border-gray-200 rounded-lg">
-              <h2 className="text-xl font-semibold mb-4">Complete Your Purchase</h2>
-              <CheckoutButton
-                selectedCourses={selectedCourses}
-                includeReattunement={includeReattunement}
-                courses={COURSES}
-                reattunement={REATTUNEMENT}
-                disabled={selectedCourses.length === 0}
-                paymentOption={paymentOption}
-                onPaymentOptionChange={setPaymentOption}
-              />
-              
-              <div className="mt-4 flex items-center">
-                <input
-                  type="checkbox"
-                  id="reattunement"
-                  checked={includeReattunement}
-                  onChange={() => setIncludeReattunement(!includeReattunement)}
-                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                />
-                <label htmlFor="reattunement" className="ml-2 block text-sm text-gray-700">
-                  Add Private Reiki Re-Attunement with Michal (+${(REATTUNEMENT.price / 100).toFixed(2)})
-                </label>
-              </div>
-            </div>
-          )}
+          <p className="mt-4 text-sm text-center text-gray-600">
+            You will receive a welcome email with course information after purchase.
+          </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -3,7 +3,7 @@
  */
 
 interface ClassStatusBadgeProps {
-  status: 'upcoming' | 'live-today' | 'past';
+  status: 'live-on-date' | 'live-tomorrow' | 'live-today' | 'past';
   small?: boolean;
 }
 
@@ -11,10 +11,16 @@ export function ClassStatusBadge({ status, small = false }: ClassStatusBadgeProp
   const baseClasses = `inline-flex items-center rounded-full px-${small ? '2' : '3'} py-${small ? '0.5' : '1'} text-${small ? 'xs' : 'sm'} font-medium`;
   
   switch (status) {
-    case 'upcoming':
+    case 'live-on-date':
       return (
         <span className={`${baseClasses} bg-blue-100 text-blue-800`}>
           Upcoming
+        </span>
+      );
+    case 'live-tomorrow':
+      return (
+        <span className={`${baseClasses} bg-yellow-100 text-yellow-800`}>
+          Live Tomorrow!
         </span>
       );
     case 'live-today':
