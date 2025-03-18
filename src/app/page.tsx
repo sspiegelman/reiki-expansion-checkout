@@ -13,6 +13,26 @@ import {
   getDaysUntilCourseStart
 } from '@/lib/checkout/date-utils';
 
+// Type for server time response
+interface ServerTimeResponse {
+  rawTime: string;
+  isoTime: string;
+  utcTime: string;
+  localTime: string;
+  timestamp: number;
+  timezone: {
+    offset: number;
+    offsetHours: number;
+  };
+  dateString: string;
+  dateChecks: {
+    isBeforeCourse: boolean;
+    isDuringCourse: boolean;
+    isAfterCourse: boolean;
+    currentClassIndex: number;
+  };
+}
+
 export default function Home() {
   // Course status checks
   const beforeCourse = isBeforeCourse();
@@ -22,7 +42,7 @@ export default function Home() {
   
   // Debug state
   const [showDebug, setShowDebug] = useState(false);
-  const [serverTime, setServerTime] = useState<any>(null);
+  const [serverTime, setServerTime] = useState<ServerTimeResponse | null>(null);
   
   // Fetch server time when debug is shown
   useEffect(() => {
