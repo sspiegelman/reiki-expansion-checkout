@@ -20,7 +20,25 @@ export const COURSE_DATES = {
  * Checks if the current date is before the course starts
  */
 export function isBeforeCourse(): boolean {
-  return new Date() < COURSE_DATES.START_DATE;
+  const now = new Date();
+  const nowDateString = getDateString(now);
+  const startDateString = getDateString(COURSE_DATES.START_DATE);
+  
+  // Using date string comparison to ignore time component
+  const result = nowDateString < startDateString;
+  
+  console.log('[DATE-UTILS] isBeforeCourse check:', {
+    now: now.toString(),
+    nowISO: now.toISOString(),
+    nowDateString: nowDateString,
+    startDate: COURSE_DATES.START_DATE.toString(),
+    startDateISO: COURSE_DATES.START_DATE.toISOString(),
+    startDateString: startDateString,
+    result,
+    note: 'Using date-only comparison (ignoring time)'
+  });
+  
+  return result;
 }
 
 /**
@@ -28,14 +46,53 @@ export function isBeforeCourse(): boolean {
  */
 export function isDuringCourse(): boolean {
   const now = new Date();
-  return now >= COURSE_DATES.START_DATE && now <= COURSE_DATES.END_DATE;
+  const nowDateString = getDateString(now);
+  const startDateString = getDateString(COURSE_DATES.START_DATE);
+  const endDateString = getDateString(COURSE_DATES.END_DATE);
+  
+  // Using date string comparison to ignore time component
+  const result = nowDateString >= startDateString && nowDateString <= endDateString;
+  
+  console.log('[DATE-UTILS] isDuringCourse check:', {
+    now: now.toString(),
+    nowISO: now.toISOString(),
+    nowDateString: nowDateString,
+    startDate: COURSE_DATES.START_DATE.toString(),
+    startDateISO: COURSE_DATES.START_DATE.toISOString(),
+    startDateString: startDateString,
+    endDate: COURSE_DATES.END_DATE.toString(),
+    endDateISO: COURSE_DATES.END_DATE.toISOString(),
+    endDateString: endDateString,
+    result,
+    note: 'Using date-only comparison (ignoring time)'
+  });
+  
+  return result;
 }
 
 /**
  * Checks if the current date is after the course ends
  */
 export function isAfterCourse(): boolean {
-  return new Date() > COURSE_DATES.END_DATE;
+  const now = new Date();
+  const nowDateString = getDateString(now);
+  const endDateString = getDateString(COURSE_DATES.END_DATE);
+  
+  // Using date string comparison to ignore time component
+  const result = nowDateString > endDateString;
+  
+  console.log('[DATE-UTILS] isAfterCourse check:', {
+    now: now.toString(),
+    nowISO: now.toISOString(),
+    nowDateString: nowDateString,
+    endDate: COURSE_DATES.END_DATE.toString(),
+    endDateISO: COURSE_DATES.END_DATE.toISOString(),
+    endDateString: endDateString,
+    result,
+    note: 'Using date-only comparison (ignoring time)'
+  });
+  
+  return result;
 }
 
 /**
@@ -44,25 +101,54 @@ export function isAfterCourse(): boolean {
  */
 export function getCurrentClassIndex(): number {
   const now = new Date();
+  const nowDateString = getDateString(now);
+  let result = -1;
   
-  // If before course, return first class
-  if (now < COURSE_DATES.CLASS_DATES[0]) {
-    return 0;
-  }
-  
-  // If after all classes, return -1
-  if (now > COURSE_DATES.CLASS_DATES[COURSE_DATES.CLASS_DATES.length - 1]) {
-    return -1;
-  }
-  
-  // Find the next upcoming class
+  // First, check if today is a class day (ignoring time)
   for (let i = 0; i < COURSE_DATES.CLASS_DATES.length; i++) {
-    if (now <= COURSE_DATES.CLASS_DATES[i]) {
-      return i;
+    const classDateString = getDateString(COURSE_DATES.CLASS_DATES[i]);
+    
+    // If today is a class day, return that class index
+    if (nowDateString === classDateString) {
+      result = i;
+      break;
     }
   }
   
-  return -1; // After all classes
+  // If today is not a class day, find the next upcoming class
+  if (result === -1) {
+    // If before course, return first class
+    if (getDateString(now) < getDateString(COURSE_DATES.CLASS_DATES[0])) {
+      result = 0;
+    }
+    // If after all classes, return -1
+    else if (getDateString(now) > getDateString(COURSE_DATES.CLASS_DATES[COURSE_DATES.CLASS_DATES.length - 1])) {
+      result = -1;
+    }
+    // Find the next upcoming class
+    else {
+      for (let i = 0; i < COURSE_DATES.CLASS_DATES.length; i++) {
+        if (getDateString(now) < getDateString(COURSE_DATES.CLASS_DATES[i])) {
+          result = i;
+          break;
+        }
+      }
+    }
+  }
+  
+  console.log('[DATE-UTILS] getCurrentClassIndex:', {
+    now: now.toString(),
+    nowISO: now.toISOString(),
+    nowDateString: getDateString(now),
+    classDates: COURSE_DATES.CLASS_DATES.map(d => d.toString()),
+    classDateStrings: COURSE_DATES.CLASS_DATES.map(d => getDateString(d)),
+    result,
+    message: result === -1 ? 'No upcoming classes' : 
+             nowDateString === getDateString(COURSE_DATES.CLASS_DATES[result]) ? 
+             `Today is Class ${result + 1}` : `Next class is Class ${result + 1}`
+  });
+  
+  return result;
 }
 
 /**
@@ -83,7 +169,23 @@ export function getNextClassPage(): string {
  * Checks if a specific class has already passed
  */
 export function isClassPast(classIndex: number): boolean {
-  return new Date() > COURSE_DATES.CLASS_DATES[classIndex];
+  const now = new Date();
+  const nowDateString = getDateString(now);
+  const classDateString = getDateString(COURSE_DATES.CLASS_DATES[classIndex]);
+  
+  // A class is considered past if today's date is after the class date
+  // If today is the class day, it's not considered past yet (since classes are at 7pm)
+  const result = nowDateString > classDateString;
+  
+  console.log('[DATE-UTILS] isClassPast check for class', classIndex + 1, ':', {
+    now: now.toString(),
+    nowDateString,
+    classDate: COURSE_DATES.CLASS_DATES[classIndex].toString(),
+    classDateString,
+    result
+  });
+  
+  return result;
 }
 
 /**
