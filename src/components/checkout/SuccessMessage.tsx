@@ -15,6 +15,9 @@ interface SuccessMessageProps {
 }
 
 export function SuccessMessage({ 
+  // We keep paymentIntentId in the props for potential future use
+  // such as displaying it to the user or for tracking purposes
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   paymentIntentId, 
   items, 
   paymentSchedule,

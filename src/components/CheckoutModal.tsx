@@ -30,6 +30,9 @@ const CheckoutForm = ({
   items,
   initialContactInfo,
   onSuccessCallback,
+  // isPopup is passed but not currently used in this component
+  // keeping it for potential future popup-specific behavior
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isPopup
 }: { 
   splitAmount: number;
@@ -311,6 +314,7 @@ export function CheckoutModal({
   paymentSchedule,
   customerInfo,
   onSuccess,
+  // isPopup is passed down to CheckoutForm for potential popup-specific behavior
   isPopup
 }: CheckoutModalProps) {
   const [isLoading, setIsLoading] = useState(false);

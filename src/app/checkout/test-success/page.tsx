@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { SuccessMessage } from '@/components/checkout/SuccessMessage';
 import { COURSES } from '@/config/courses';
 
@@ -9,8 +8,6 @@ import { COURSES } from '@/config/courses';
  * This page is for development and testing only
  */
 export default function TestSuccessPage() {
-  const [isClosing, setIsClosing] = useState(false);
-  
   // Sample data for testing
   const testItems = [
     {
@@ -27,12 +24,7 @@ export default function TestSuccessPage() {
   
   // Handle close button click
   const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      // In a real scenario, this would close the popup or redirect
-      setIsClosing(false);
-      alert('Close button clicked - in a real scenario, this would close the popup');
-    }, 300);
+    alert('Close button clicked - in a real scenario, this would close the popup');
   };
   
   return (

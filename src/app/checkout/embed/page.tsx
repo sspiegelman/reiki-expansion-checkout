@@ -2,20 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { COURSES, REATTUNEMENT } from '@/config/courses';
+import { COURSES } from '@/config/courses';
 import { CheckoutModal } from '@/components/CheckoutModal';
 import { TrustIndicators } from '@/components/TrustIndicators';
 import { SuccessMessage } from '@/components/checkout/SuccessMessage';
 
-/**
- * Embedded checkout page designed to be opened in a popup window
- * Accepts URL parameters:
- * - classId: The ID of the class to purchase (e.g., class-1, class-2, etc.)
- * - customerEmail: Pre-filled customer email
- * - customerName: Pre-filled customer name
- * - returnUrl: URL to redirect to after successful purchase
- * - popup: Set to 'true' if opened in a popup window
- */
 export default function EmbeddedCheckoutPage() {
   const searchParams = useSearchParams();
   
@@ -27,8 +18,6 @@ export default function EmbeddedCheckoutPage() {
   const isPopup = searchParams.get('popup') === 'true';
   
   // State for checkout
-  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
-  const [includeReattunement, setIncludeReattunement] = useState(false);
   const [paymentOption, setPaymentOption] = useState<'full' | 'split-2' | 'split-3'>('full');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,10 +29,6 @@ export default function EmbeddedCheckoutPage() {
   
   // Set up initial state based on URL parameters
   useEffect(() => {
-    if (classId) {
-      setSelectedCourses([classId]);
-    }
-    
     // Auto-open the modal after a short delay
     const timer = setTimeout(() => {
       setIsModalOpen(true);
@@ -113,14 +98,6 @@ export default function EmbeddedCheckoutPage() {
       items.push({
         name: selectedCourse.title,
         price: selectedCourse.price
-      });
-    }
-    
-    // Add re-attunement if selected
-    if (includeReattunement) {
-      items.push({
-        name: REATTUNEMENT.title,
-        price: REATTUNEMENT.price
       });
     }
     
