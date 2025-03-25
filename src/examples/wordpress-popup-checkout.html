@@ -1,0 +1,109 @@
+<!-- 
+  WordPress Popup Checkout Example
+  
+  This code can be added to a WordPress page or post using a Custom HTML block,
+  or added to a theme template file.
+  
+  Replace [YOUR_CHECKOUT_URL] with the actual URL of your checkout application.
+  
+  Memberium shortcodes are used to get the current user's information:
+  - [memb_contact field='Email'] - Gets the user's email
+  - [memb_contact field='FirstName'] - Gets the user's first name
+  - [memb_contact field='LastName'] - Gets the user's last name
+  
+  You can customize the button style and text to match your site's design.
+-->
+
+<!-- Teaser content for Class 3 -->
+<div class="class-teaser" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+  <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Energy Measurement with Pendulum</h3>
+  
+  <p style="margin-bottom: 15px;">Take your Reiki practice to the next level by learning to use the pendulum for self-treatment, combining it with Reiki for deeper energy alignment.</p>
+  
+  <p style="font-weight: bold; color: #4f46e5; margin-bottom: 15px;">$95.00</p>
+  
+  <!-- Styled button to open checkout -->
+  <button 
+    onclick="openCheckoutPopup('class-3')" 
+    style="background-color: #4f46e5; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 500; cursor: pointer;">
+    Add This Class to Your Journey
+  </button>
+</div>
+
+<!-- JavaScript to handle the popup -->
+<script>
+function openCheckoutPopup(classId) {
+  // Get customer info from Memberium
+  const customerEmail = "[memb_contact field='Email']";
+  const customerName = "[memb_contact field='FirstName'] [memb_contact field='LastName']";
+  
+  // URL of your checkout application with the embed page
+  const baseUrl = "[YOUR_CHECKOUT_URL]/checkout/embed";
+  
+  // Create the checkout URL with parameters
+  const checkoutUrl = `${baseUrl}?classId=${classId}&customerEmail=${encodeURIComponent(customerEmail)}&customerName=${encodeURIComponent(customerName)}&popup=true`;
+  
+  // Open the popup window
+  const popupWindow = window.open(
+    checkoutUrl,
+    'CheckoutPopup',
+    'width=500,height=700,resizable=yes,scrollbars=yes,status=yes'
+  );
+  
+  // Listen for messages from the popup
+  window.addEventListener('message', function(event) {
+    // Verify the message is from our popup
+    if (event.data && event.data.type === 'PURCHASE_SUCCESS') {
+      console.log('Purchase successful!', event.data.paymentIntentId);
+      
+      // You could show a success message on the parent page
+      // or refresh the page to update the user's access
+      // For example:
+      const successMessage = document.createElement('div');
+      successMessage.className = 'purchase-success-message';
+      successMessage.innerHTML = `
+        <div style="position: fixed; bottom: 20px; right: 20px; background-color: #10b981; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; max-width: 300px;">
+          <p style="margin: 0; font-weight: 500;">Purchase Successful!</p>
+          <p style="margin: 5px 0 0 0; font-size: 14px;">Please log out and log back in to access your new class.</p>
+        </div>
+      `;
+      document.body.appendChild(successMessage);
+      
+      // Remove the message after 10 seconds
+      setTimeout(() => {
+        if (successMessage.parentNode) {
+          successMessage.parentNode.removeChild(successMessage);
+        }
+      }, 10000);
+    }
+  });
+  
+  // Optional: Handle popup closed event
+  const checkPopupClosed = setInterval(function() {
+    if (popupWindow.closed) {
+      clearInterval(checkPopupClosed);
+    }
+  }, 1000);
+}
+</script>
+
+<!-- 
+  You can duplicate the class-teaser div for each class you want to offer,
+  just change the classId in the openCheckoutPopup function call.
+  
+  Example for Class 4:
+-->
+
+<div class="class-teaser" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+  <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Energy & Space Clearing</h3>
+  
+  <p style="margin-bottom: 15px;">Learn and practice integrating Reiki symbols, mantras, and the pendulum to clear and bless your energy and space.</p>
+  
+  <p style="font-weight: bold; color: #4f46e5; margin-bottom: 15px;">$95.00</p>
+  
+  <button 
+    onclick="openCheckoutPopup('class-4')" 
+    style="background-color: #4f46e5; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 500; cursor: pointer;">
+    Add This Class to Your Journey
+  </button>
+</div>

@@ -27,7 +27,10 @@ const CheckoutForm = ({
   isLoading,
   setIsLoading,
   setProcessingStep,
-  items
+  items,
+  initialContactInfo,
+  onSuccessCallback,
+  isPopup
 }: { 
   splitAmount: number;
   totalAmount: number;
@@ -37,15 +40,22 @@ const CheckoutForm = ({
   setIsLoading: (loading: boolean) => void;
   setProcessingStep: (step: number) => void;
   items: { name: string; price: number; }[];
+  initialContactInfo?: {
+    fullName: string;
+    email: string;
+    phone: string;
+  };
+  onSuccessCallback?: (paymentIntentId: string) => void;
+  isPopup?: boolean;
 }) => {
   const stripe = useStripe();
   const elements = useElements();
 
   const [error, setError] = useState<string | null>(null);
   const [contactInfo, setContactInfo] = useState({
-    fullName: '',
-    email: '',
-    phone: ''
+    fullName: initialContactInfo?.fullName || '',
+    email: initialContactInfo?.email || '',
+    phone: initialContactInfo?.phone || ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -140,7 +150,13 @@ const CheckoutForm = ({
 
       // Payment successful
       setProcessingStep(3); // Final step before redirect
-      window.location.href = `/success?payment_intent=${result.paymentIntent.id}`;
+      
+      // Use the custom success handler if provided, otherwise use default redirect
+      if (onSuccessCallback) {
+        onSuccessCallback(result.paymentIntent.id);
+      } else {
+        window.location.href = `/success?payment_intent=${result.paymentIntent.id}`;
+      }
     } catch (error) {
       console.error('Error:', error);
       setError(error instanceof Error ? error.message : 'Payment failed. Please try again.');
@@ -279,9 +295,24 @@ interface CheckoutModalProps {
     totalAmount: number;
     payments: number;
   };
+  customerInfo?: {
+    fullName: string;
+    email: string;
+    phone: string;
+  };
+  onSuccess?: (paymentIntentId: string) => void;
+  isPopup?: boolean;
 }
 
-export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: CheckoutModalProps) {
+export function CheckoutModal({ 
+  isOpen, 
+  onClose, 
+  items, 
+  paymentSchedule,
+  customerInfo,
+  onSuccess,
+  isPopup
+}: CheckoutModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
   const { splitAmount, totalAmount, payments } = paymentSchedule;
@@ -396,6 +427,9 @@ export function CheckoutModal({ isOpen, onClose, items, paymentSchedule }: Check
               setIsLoading={setIsLoading}
               setProcessingStep={setProcessingStep}
               items={items}
+              initialContactInfo={customerInfo}
+              onSuccessCallback={onSuccess}
+              isPopup={isPopup}
             />
             
             <TrustIndicators />
